@@ -348,6 +348,12 @@ img{display:block}
       <button class="btn" id="pl-add" style="width:100%">Добавить плейлист</button>
     </div>
     <div class="set-card">
+      <h3>Загрузка</h3>
+      <div class="hint">Если плейлист не грузится напрямую («Failed to fetch») — это браузер блокирует запрос к серверу. Включи прокси: приложение подтянет плейлист через промежуточный сервер.</div>
+      <div class="chips" id="proxy-chips" style="padding:0; margin:0 0 4px; max-width:none"></div>
+      <div class="hint" style="margin:10px 0 0; font-size:12px">Через прокси ссылка плейлиста проходит через сторонний сервер — учитывай, если в ней есть личный токен.</div>
+    </div>
+    <div class="set-card">
       <h3>Данные</h3>
       <div class="hint">Программа передач подгружается из плейлиста автоматически.</div>
       <div class="kv"><span class="k">Каналов загружено</span><span class="v" id="st-channels">—</span></div>
@@ -442,7 +448,7 @@ const isHttpsPage = location.protocol === 'https:';
 
 let store;
 try { store = JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch(e){ store = null; }
-store = Object.assign({playlists:[], active:null, favs:[], recent:[], epgOverride:{}}, store||{});
+store = Object.assign({playlists:[], active:null, favs:[], recent:[], epgOverride:{}, proxy:'auto'}, store||{});
 function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); }catch(e){} }
 
 const S = {
@@ -525,9 +531,8 @@ async function loadEPG(url){
   S.epgOk=false; S.epgCount=0;
   if(!url) return;
   try{
-    const r=await fetch(url,{cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    let buf=await r.arrayBuffer();
+    const {buf:raw}=await fetchRaw(url);
+    let buf=raw;
     const b=new Uint8Array(buf);
     if(b[0]===0x1f&&b[1]===0x8b){
       const ds=new DecompressionStream('gzip');
@@ -555,6 +560,31 @@ function nowNext(ch,now){
 const fmtT=ts=>new Date(ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
 const fmtD=ts=>new Date(ts).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
 
+/* ---------- загрузка с обходом CORS ---------- */
+const PROXIES={
+  allorigins:u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  corsproxy:u=>'https://corsproxy.io/?url='+encodeURIComponent(u)
+};
+async function fetchRaw(url){
+  const routes =
+    store.proxy==='off' ? [[u=>u,'напрямую']] :
+    store.proxy==='auto' ? [[u=>u,'напрямую'],[PROXIES.allorigins,'через прокси'],[PROXIES.corsproxy,'через прокси']] :
+    [[PROXIES[store.proxy]||(u=>u),'через прокси']];
+  let last=null;
+  for(const [wrap,label] of routes){
+    try{
+      const r=await fetch(wrap(url),{cache:'no-store'});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return {buf:await r.arrayBuffer(), via:label};
+    }catch(e){ last=e; }
+  }
+  throw last||new Error('Failed to fetch');
+}
+async function fetchText(url){
+  const {buf,via}=await fetchRaw(url);
+  return {text:new TextDecoder().decode(buf), via};
+}
+
 /* ---------- загрузка плейлиста ---------- */
 function activePl(){ return store.playlists.find(p=>p.id===store.active)||null; }
 async function loadActive(){
@@ -562,9 +592,7 @@ async function loadActive(){
   if(!pl){ renderAll(); return; }
   showHomeLoader(true);
   try{
-    const r=await fetch(pl.url,{cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const text=await r.text();
+    const {text,via}=await fetchText(pl.url);
     if(!text.includes('#EXTINF')) throw new Error('это не M3U-плейлист');
     const {channels,tvgUrl}=parseM3U(text);
     S.channels=channels; S.tvgUrl=tvgUrl;
@@ -576,7 +604,7 @@ async function loadActive(){
     // EPG: ручной URL из настроек → авто из плейлиста
     const epgUrl=(store.epgOverride[pl.id]||'').trim()||tvgUrl;
     if(epgUrl){ $('#guide-sub').textContent='загрузка программы…'; await loadEPG(epgUrl); }
-    toast('Загружено каналов: '+channels.length.toLocaleString('ru-RU'));
+    toast('Загружено каналов: '+channels.length.toLocaleString('ru-RU')+(via==='напрямую'?'':' ('+via+')'));
   }catch(e){
     console.warn(e);
     toast('Не удалось загрузить плейлист: '+e.message);
@@ -779,6 +807,13 @@ function renderSettings(){
   else if(S.epgOk){ e.textContent='ок · '+S.epgCount.toLocaleString('ru-RU')+' передач'; e.className='v ok'; }
   else { e.textContent='нет'; e.className='v warn'; }
   $('#st-active').textContent=activePl()?activePl().name:'—';
+  // прокси
+  const modes=[['auto','Авто'],['allorigins','Прокси 1'],['corsproxy','Прокси 2'],['off','Без прокси']];
+  $('#proxy-chips').innerHTML=modes.map(([v,t])=>
+    `<button class="chip${store.proxy===v?' on':''}" data-px="${v}">${t}</button>`).join('');
+  $('#proxy-chips').querySelectorAll('[data-px]').forEach(b=>b.onclick=()=>{
+    store.proxy=b.dataset.px; save(); renderSettings(); loadActive();
+  });
 }
 
 /* ---------- плеер ---------- */
