@@ -351,7 +351,11 @@ img{display:block}
       <h3>Загрузка</h3>
       <div class="hint">Если плейлист не грузится напрямую («Failed to fetch») — это браузер блокирует запрос к серверу. Включи прокси: приложение подтянет плейлист через промежуточный сервер.</div>
       <div class="chips" id="proxy-chips" style="padding:0; margin:0 0 4px; max-width:none"></div>
-      <div class="hint" style="margin:10px 0 0; font-size:12px">Через прокси ссылка плейлиста проходит через сторонний сервер — учитывай, если в ней есть личный токен.</div>
+      <div class="field" id="home-token-wrap" style="margin:12px 0 0">
+        <label>Токен домашнего прокси</label>
+        <input id="home-token" type="password" placeholder="Вставь токен из чата" autocomplete="off">
+      </div>
+      <div class="hint" style="margin:10px 0 0; font-size:12px">«Домашний» — твой личный прокси: запросы идут с «человеческими» заголовками, сервер провайдера их не режет. Токен хранится только на этом устройстве.</div>
     </div>
     <div class="set-card">
       <h3>Данные</h3>
@@ -448,7 +452,7 @@ const isHttpsPage = location.protocol === 'https:';
 
 let store;
 try { store = JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch(e){ store = null; }
-store = Object.assign({playlists:[], active:null, favs:[], recent:[], epgOverride:{}, proxy:'auto'}, store||{});
+store = Object.assign({playlists:[], active:null, favs:[], recent:[], epgOverride:{}, proxy:'auto', homeToken:''}, store||{});
 function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); }catch(e){} }
 
 const S = {
@@ -566,6 +570,19 @@ const PROXIES={
   corsproxy:u=>'https://corsproxy.io/?url='+encodeURIComponent(u)
 };
 async function fetchRaw(url){
+  if(store.proxy==='home'){
+    const base=await homeBase();
+    if(!base) throw new Error('домашний прокси недоступен');
+    const tok=(store.homeToken||'').trim();
+    if(!tok) throw new Error('вставь токен домашнего прокси в настройках');
+    const r=await fetch(base+'/fetch?url='+encodeURIComponent(url)+'&t='+encodeURIComponent(tok),{cache:'no-store'});
+    if(!r.ok){
+      let em='HTTP '+r.status;
+      try{ const d=await r.json(); if(d&&d.error) em='прокси: '+d.error; }catch(e){}
+      throw new Error(em);
+    }
+    return {buf:await r.arrayBuffer(), via:'домашний прокси'};
+  }
   const routes =
     store.proxy==='off' ? [[u=>u,'напрямую']] :
     store.proxy==='auto' ? [[u=>u,'напрямую'],[PROXIES.allorigins,'через прокси'],[PROXIES.corsproxy,'через прокси']] :
@@ -583,6 +600,24 @@ async function fetchRaw(url){
 async function fetchText(url){
   const {buf,via}=await fetchRaw(url);
   return {text:new TextDecoder().decode(buf), via};
+}
+
+/* ---------- домашний прокси: адрес туннеля ---------- */
+let homeBaseP=null, homeBaseTs=0;
+async function homeBase(){
+  const now=Date.now();
+  if(!homeBaseP||now-homeBaseTs>600000){
+    homeBaseTs=now;
+    homeBaseP=(async()=>{
+      try{
+        const r=await fetch('https://aukro1408.github.io/puls/push-server.json',{cache:'no-store'});
+        if(!r.ok) return '';
+        const d=await r.json();
+        return String(d.url||'').replace(/\/+$/,'');
+      }catch(e){ return ''; }
+    })();
+  }
+  return homeBaseP;
 }
 
 /* ---------- загрузка плейлиста ---------- */
@@ -808,12 +843,18 @@ function renderSettings(){
   else { e.textContent='нет'; e.className='v warn'; }
   $('#st-active').textContent=activePl()?activePl().name:'—';
   // прокси
-  const modes=[['auto','Авто'],['allorigins','Прокси 1'],['corsproxy','Прокси 2'],['off','Без прокси']];
+  const modes=[['auto','Авто'],['home','Домашний'],['allorigins','Прокси 1'],['corsproxy','Прокси 2'],['off','Без прокси']];
   $('#proxy-chips').innerHTML=modes.map(([v,t])=>
     `<button class="chip${store.proxy===v?' on':''}" data-px="${v}">${t}</button>`).join('');
   $('#proxy-chips').querySelectorAll('[data-px]').forEach(b=>b.onclick=()=>{
-    store.proxy=b.dataset.px; save(); renderSettings(); loadActive();
+    store.proxy=b.dataset.px; save(); renderSettings();
+    if(b.dataset.px==='home'&&!(store.homeToken||'').trim()) toast('Вставь токен домашнего прокси 👇',3200);
+    else loadActive();
   });
+  const tw=$('#home-token-wrap'), ti=$('#home-token');
+  tw.style.display=store.proxy==='home'?'block':'none';
+  if(ti.value!==(store.homeToken||'')) ti.value=store.homeToken||'';
+  ti.onchange=()=>{ store.homeToken=ti.value.trim(); save(); toast('Токен сохранён'); loadActive(); };
 }
 
 /* ---------- плеер ---------- */
