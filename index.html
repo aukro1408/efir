@@ -3,1005 +3,549 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#080A11">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Эфир — твоё ТВ</title>
+<meta name="theme-color" content="#0c1116">
+<title>Эфир</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 <style>
 :root{
-  --bg:#080A11; --bg2:#0B0E17; --card:#121623; --card2:#171C2B;
-  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
-  --txt:#F5F1E8; --mut:#9AA3B8; --dim:#5E6579;
-  --acc:#FFB03A; --acc2:#FF6B3D;
-  --grad:linear-gradient(135deg,#FFB03A 0%,#FF6B3D 100%);
-  --r:20px; --rs:14px;
-  --shadow:0 10px 30px rgba(0,0,0,.45);
-  --tab-h:68px;
+  --bg:#0c1116; --surface:#151c25; --surface2:#1b2430; --tile:#0a0e13;
+  --line:rgba(255,255,255,.07);
+  --txt:#f2f5f9; --muted:#93a1b3; --faint:#5d6b7d;
+  --acc:#3d9df2; --acc-dim:rgba(61,157,242,.16);
+  --danger:#ff6b6b; --ok:#4ade80;
+  --r:14px;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{
-  margin:0; background:var(--bg); color:var(--txt);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  font-size:15px; line-height:1.45; overscroll-behavior-y:none;
-  padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom));
-}
-body::before{
-  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:
-    radial-gradient(600px 320px at 85% -60px, rgba(255,107,61,.14), transparent 60%),
-    radial-gradient(700px 380px at -10% 10%, rgba(255,176,58,.07), transparent 60%),
-    radial-gradient(900px 600px at 50% 110%, rgba(64,80,160,.10), transparent 60%);
-}
-h1,h2,h3{margin:0; font-weight:800; letter-spacing:-.01em}
-button{font:inherit; color:inherit; background:none; border:0; cursor:pointer}
-input{font:inherit; color:var(--txt)}
-img{display:block}
-::-webkit-scrollbar{width:0;height:0}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;font-size:15px;min-height:100dvh;padding-bottom:76px}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit}
 
-/* ---------- app bar ---------- */
-.appbar{
-  position:sticky; top:0; z-index:20;
-  padding:calc(14px + env(safe-area-inset-top)) 18px 12px;
-  background:rgba(8,10,17,.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--line);
-  display:flex; align-items:center; gap:12px;
-}
-.appbar .logo-dot{
-  width:34px; height:34px; border-radius:12px; background:var(--grad); flex:none;
-  display:flex; align-items:center; justify-content:center;
-  box-shadow:0 4px 16px rgba(255,140,50,.35);
-}
-.appbar .logo-dot svg{width:18px;height:18px}
-.appbar h1{font-size:21px}
-.appbar .sub{font-size:12px; color:var(--mut); margin-top:1px}
-.appbar .sp{flex:1}
-.iconbtn{
-  width:40px; height:40px; border-radius:14px; flex:none;
-  background:var(--card); border:1px solid var(--line);
-  display:flex; align-items:center; justify-content:center;
-}
-.iconbtn:active{transform:scale(.94)}
-.iconbtn svg{width:20px; height:20px; stroke:var(--txt); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
-.iconbtn.on{border-color:var(--acc)}
-.iconbtn.on svg{stroke:var(--acc)}
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(12,17,22,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:720px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:10px}
+.logo{font-weight:800;font-size:19px;letter-spacing:.14em}
+.logo span{color:var(--acc)}
+.topbar .sp{flex:1}
+.icobtn{width:38px;height:38px;border-radius:12px;background:var(--surface);display:flex;align-items:center;justify-content:center;border:1px solid var(--line)}
+.icobtn svg{width:19px;height:19px;stroke:var(--txt)}
 
-/* ---------- screens ---------- */
-.screen{display:none; animation:fade .25s ease}
-.screen.show{display:block}
-@keyframes fade{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
-.wrap{padding:14px 16px 24px; max-width:760px; margin:0 auto}
+/* ---------- tabs content ---------- */
+.wrap{max-width:720px;margin:0 auto;padding:0 12px}
+.tab{display:none}
+.tab.on{display:block}
 
-/* ---------- search ---------- */
-.searchrow{display:none; padding:0 16px 10px; max-width:760px; margin:0 auto}
-.searchrow.show{display:block; animation:fade .2s ease}
-.searchbox{
-  display:flex; align-items:center; gap:10px;
-  background:var(--card); border:1px solid var(--line2); border-radius:16px; padding:12px 14px;
-}
-.searchbox svg{width:18px;height:18px; stroke:var(--mut); fill:none; stroke-width:2; stroke-linecap:round; flex:none}
-.searchbox input{flex:1; background:none; border:0; outline:0; font-size:15px}
-.searchbox input::placeholder{color:var(--dim)}
+.search{position:sticky;top:61px;z-index:15;background:var(--bg);padding:10px 4px 6px}
+.search input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;color:var(--txt);outline:none}
+.search input::placeholder{color:var(--faint)}
+.search input:focus{border-color:var(--acc)}
 
-/* ---------- chips ---------- */
-.chips{display:flex; gap:8px; overflow-x:auto; padding:2px 16px 12px; max-width:760px; margin:0 auto}
-.chip{
-  flex:none; padding:9px 16px; border-radius:999px; font-size:13.5px; font-weight:600;
-  background:var(--card); border:1px solid var(--line); color:var(--mut);
-  transition:all .18s;
-}
-.chip.on{background:var(--grad); color:#241203; border-color:transparent; box-shadow:0 4px 14px rgba(255,140,50,.3)}
-.chip .n{opacity:.65; font-weight:700; font-size:12px; margin-left:4px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:8px 4px 12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-size:13px;font-weight:600}
+.chip.on{background:var(--acc-dim);border-color:var(--acc);color:var(--txt)}
 
-/* ---------- now on air ---------- */
-.sec-t{display:flex; align-items:baseline; gap:8px; margin:6px 0 10px}
-.sec-t h2{font-size:17px}
-.sec-t .live{
-  font-size:11px; font-weight:800; letter-spacing:.08em; color:#0d0a02;
-  background:var(--grad); border-radius:7px; padding:3px 8px;
-  display:inline-flex; align-items:center; gap:5px;
-}
-.sec-t .live i{width:6px;height:6px;border-radius:50%;background:#0d0a02; animation:blink 1.2s infinite}
-@keyframes blink{50%{opacity:.25}}
-.nowrow{display:flex; gap:12px; overflow-x:auto; padding:2px 16px 16px; max-width:760px; margin:0 auto; scroll-snap-type:x mandatory}
-.nowcard{
-  flex:none; width:250px; scroll-snap-align:start; text-align:left;
-  background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px;
-  display:flex; flex-direction:column; gap:10px; box-shadow:var(--shadow);
-}
-.nowcard .ch{display:flex; align-items:center; gap:10px}
-.nowcard .nm{font-weight:700; font-size:14px}
-.nowcard .pr{font-size:13.5px; color:var(--txt); font-weight:600; line-height:1.35;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:37px}
-.nowcard .tm{font-size:12px; color:var(--mut)}
-.pbar{height:4px; border-radius:99px; background:rgba(255,255,255,.1); overflow:hidden}
-.pbar i{display:block; height:100%; background:var(--grad); border-radius:99px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-bottom:16px}
+.card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0;text-align:left}
+.card:active{transform:scale(.97)}
+.card .tile{background:var(--tile);border-radius:9px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.card .tile img{max-width:82%;max-height:82%;object-fit:contain}
+.card .tile .ini{font-size:26px;font-weight:800;color:var(--acc)}
+.card .nm{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .pr{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:14px}
+.card .bar{height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.card .bar i{display:block;height:100%;background:var(--acc);border-radius:2px}
+.fav{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:10px;background:rgba(10,14,19,.72);display:flex;align-items:center;justify-content:center}
+.fav svg{width:15px;height:15px;fill:none;stroke:var(--muted);stroke-width:2}
+.fav.on svg{fill:var(--danger);stroke:var(--danger)}
 
-/* ---------- channel grid ---------- */
-.grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
-@media(min-width:560px){.grid{grid-template-columns:repeat(4,1fr)}}
-.chan{
-  background:var(--card); border:1px solid var(--line); border-radius:var(--r);
-  padding:12px 8px 10px; display:flex; flex-direction:column; align-items:center; gap:8px;
-  text-align:center; transition:transform .15s, border-color .15s; position:relative;
-}
-.chan:active{transform:scale(.96)}
-.chan .lg{
-  width:58px; height:58px; border-radius:18px; background:#0A0D15;
-  border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
-  overflow:hidden; font-weight:800; font-size:20px; color:var(--acc);
-}
-.chan .lg img{width:100%; height:100%; object-fit:contain; padding:6px}
-.chan .nm{font-size:12.5px; font-weight:600; line-height:1.25;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:31px}
-.chan .cw{font-size:11px; color:var(--acc); font-weight:600;
-  display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; max-width:100%}
-.chan .favb{position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:10px;
-  display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35)}
-.chan .favb svg{width:15px; height:15px; fill:none; stroke:var(--mut); stroke-width:2}
-.chan .favb.on svg{fill:var(--acc2); stroke:var(--acc2)}
+.empty{padding:48px 20px;text-align:center;color:var(--faint);font-size:14px;line-height:1.6}
 
 /* ---------- guide ---------- */
-.grow{
-  display:flex; gap:12px; align-items:center; width:100%; text-align:left;
-  background:var(--card); border:1px solid var(--line); border-radius:var(--r);
-  padding:12px; margin-bottom:10px;
-}
-.grow:active{transform:scale(.99)}
-.grow .lg{width:52px; height:52px; border-radius:16px; background:#0A0D15; border:1px solid var(--line);
-  display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none;
-  font-weight:800; color:var(--acc); font-size:18px}
-.grow .lg img{width:100%; height:100%; object-fit:contain; padding:5px}
-.grow .inf{flex:1; min-width:0}
-.grow .nm{font-weight:700; font-size:14.5px; margin-bottom:3px}
-.grow .pr{font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.grow .nx{font-size:12px; color:var(--mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px}
-.grow .nx b{color:var(--dim); font-weight:600}
-.grow .pbar{margin-top:7px}
-
-/* ---------- empty / loader ---------- */
-.empty{text-align:center; padding:56px 24px; color:var(--mut)}
-.empty .big{font-size:44px; margin-bottom:12px}
-.empty h3{font-size:17px; color:var(--txt); margin-bottom:6px}
-.empty p{font-size:13.5px; margin:0 0 16px}
-.btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  background:var(--grad); color:#241203; font-weight:800; font-size:15px;
-  border-radius:16px; padding:13px 22px; box-shadow:0 6px 20px rgba(255,140,50,.3);
-}
-.btn:active{transform:scale(.97)}
-.btn.ghost{background:var(--card); color:var(--txt); border:1px solid var(--line2); box-shadow:none; font-weight:600}
-.loader{display:flex; flex-direction:column; align-items:center; gap:12px; padding:60px 20px; color:var(--mut)}
-.spin{width:38px; height:38px; border-radius:50%; border:3px solid var(--line2); border-top-color:var(--acc); animation:sp 0.8s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-
-/* ---------- tab bar ---------- */
-.tabbar{
-  position:fixed; left:0; right:0; bottom:0; z-index:30;
-  padding:8px 10px calc(10px + env(safe-area-inset-bottom));
-  background:rgba(10,12,20,.9); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-  border-top:1px solid var(--line);
-  display:flex; justify-content:space-around;
-}
-.tab{flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px;
-  color:var(--dim); font-size:11px; font-weight:600; border-radius:14px}
-.tab svg{width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
-.tab.on{color:var(--acc)}
-.tab.on svg{stroke:var(--acc)}
+.grow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;gap:12px;margin-bottom:10px;align-items:center;text-align:left;width:100%}
+.grow .gtile{flex:0 0 64px;height:44px;background:var(--tile);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.grow .gtile img{max-width:85%;max-height:85%;object-fit:contain}
+.grow .gtile .ini{font-weight:800;color:var(--acc)}
+.grow .gi{min-width:0;flex:1}
+.grow .gn{font-size:13px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow .gp{font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow .gp b{color:var(--acc);font-weight:600;margin-right:6px}
+.grow .gn2{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.grow .gbar{height:3px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:6px;overflow:hidden}
+.grow .gbar i{display:block;height:100%;background:var(--acc)}
 
 /* ---------- player ---------- */
-.player{
-  position:fixed; inset:0; z-index:50; background:var(--bg);
-  display:none; flex-direction:column; overflow-y:auto;
-  padding-bottom:calc(20px + env(safe-area-inset-bottom));
-}
-.player.show{display:flex; animation:slideup .28s cubic-bezier(.2,.9,.3,1)}
-@keyframes slideup{from{transform:translateY(40px); opacity:0} to{transform:none; opacity:1}}
-.p-head{
-  position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:12px;
-  padding:calc(12px + env(safe-area-inset-top)) 14px 12px;
-  background:rgba(8,10,17,.85); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-}
-.p-head .t{flex:1; min-width:0}
-.p-head .t .nm{font-weight:800; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.p-head .t .gr{font-size:12px; color:var(--mut)}
-.p-video{position:relative; background:#000; aspect-ratio:16/9; max-height:44vh; width:100%}
-.p-video video{width:100%; height:100%; background:#000}
-.mixed{
-  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:10px; padding:24px; text-align:center; background:rgba(5,6,10,.88); backdrop-filter:blur(4px);
-}
-.mixed .t{font-weight:800; font-size:16px}
-.mixed .d{font-size:13px; color:var(--mut); max-width:340px}
-.mixed .row{display:flex; gap:10px; margin-top:6px}
-.p-sec{padding:16px 16px 0; max-width:760px; margin:0 auto; width:100%}
-.p-now{
-  background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px;
-}
-.p-now .k{font-size:11px; font-weight:800; letter-spacing:.08em; color:var(--acc); margin-bottom:4px}
-.p-now .v{font-size:15px; font-weight:700}
-.p-now .tm{font-size:12.5px; color:var(--mut); margin-top:2px}
-.p-now .pbar{margin-top:10px}
-.p-actions{display:flex; gap:10px; margin-top:12px}
-.p-act{
-  flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
-  background:var(--card); border:1px solid var(--line2); border-radius:16px; padding:12px;
-  font-size:13.5px; font-weight:700;
-}
-.p-act:active{transform:scale(.97)}
-.p-act svg{width:18px; height:18px; fill:none; stroke:var(--txt); stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
-.p-act.on svg{fill:var(--acc2); stroke:var(--acc2)}
-.p-tabs{display:flex; gap:8px; margin:18px 0 10px}
-.p-tab{padding:9px 18px; border-radius:999px; font-size:13.5px; font-weight:700; color:var(--mut);
-  background:var(--card); border:1px solid var(--line)}
-.p-tab.on{background:var(--grad); color:#241203; border-color:transparent}
-.prog{display:flex; gap:12px; padding:12px 4px; border-bottom:1px solid var(--line); align-items:flex-start}
-.prog:last-child{border-bottom:0}
-.prog .tm{flex:none; width:96px; font-size:12.5px; color:var(--mut); font-variant-numeric:tabular-nums; padding-top:2px}
-.prog .tt{font-size:14px; font-weight:600}
-.prog .ds{font-size:12.5px; color:var(--mut); margin-top:2px}
-.prog.now .tt{color:var(--acc)}
-.prog.now .tm{color:var(--acc); font-weight:700}
-.prog .dot{flex:none; width:8px; height:8px; border-radius:50%; background:var(--dim); margin-top:6px}
-.prog.now .dot{background:var(--acc); box-shadow:0 0 10px var(--acc)}
+.player{position:fixed;inset:0;z-index:50;background:#000;display:none;flex-direction:column}
+.player.on{display:flex}
+.pv{position:relative;background:#000;aspect-ratio:16/9;max-height:46dvh}
+.pv video{width:100%;height:100%;background:#000}
+.pclose{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.6);color:#fff;font-size:18px;z-index:2}
+.pinfo{flex:1;overflow-y:auto;background:var(--bg);border-radius:20px 20px 0 0;margin-top:-18px;position:relative;padding:22px 18px 30px}
+.pch{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.pch .ptile{width:64px;height:44px;background:var(--tile);border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 auto}
+.pch .ptile img{max-width:85%;max-height:85%;object-fit:contain}
+.pch .ptile .ini{font-weight:800;color:var(--acc);font-size:20px}
+.pch .pnm{font-size:17px;font-weight:800}
+.pnow{font-size:14px;margin:10px 0 2px}
+.pnow b{color:var(--acc)}
+.pnext{font-size:13px;color:var(--muted)}
+.pbar{height:4px;border-radius:3px;background:rgba(255,255,255,.09);margin:12px 0;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--acc)}
+.pbtns{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.pbtn{padding:10px 16px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);font-size:13.5px;font-weight:700}
+.pbtn.pri{background:var(--acc);border-color:var(--acc);color:#04121f}
+.plist{margin-top:6px}
+.plist h4{margin:14px 0 8px;font-size:12px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
+.prow{display:flex;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:13.5px;align-items:baseline}
+.prow .t{color:var(--acc);font-weight:700;flex:0 0 52px;font-size:12.5px}
+.prow.cur .t{color:var(--ok)}
+.prow .tt{min-width:0}
+.prow .tt small{display:block;color:var(--faint);font-size:11.5px;margin-top:2px}
+.pext{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-top:14px;font-size:14px;line-height:1.65;color:var(--muted)}
+.pext b{color:var(--txt)}
 
 /* ---------- settings ---------- */
-.set-card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:16px; margin-bottom:14px}
-.set-card h3{font-size:15px; margin-bottom:4px}
-.set-card .hint{font-size:12.5px; color:var(--mut); margin-bottom:12px}
-.pl{border:1px solid var(--line); border-radius:var(--rs); padding:12px 14px; margin-bottom:10px; background:var(--bg2)}
-.pl.active{border-color:var(--acc); box-shadow:0 0 0 1px var(--acc)}
-.pl .nm{font-weight:700; font-size:14.5px; display:flex; align-items:center; gap:8px}
-.pl .url{font-size:11.5px; color:var(--dim); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:monospace}
-.pl .row{display:flex; gap:8px; margin-top:10px}
-.pl .row button{flex:1; font-size:12.5px; font-weight:700; padding:9px; border-radius:11px;
-  background:rgba(255,255,255,.06); border:1px solid var(--line)}
-.pl .row button.use{background:var(--grad); color:#241203; border:0}
-.pl .row button.del{color:#FF7B7B}
-.field{margin-bottom:12px}
-.field label{display:block; font-size:12.5px; font-weight:700; color:var(--mut); margin-bottom:6px}
-.field input{
-  width:100%; background:var(--bg2); border:1px solid var(--line2); border-radius:13px;
-  padding:12px 14px; outline:0; font-size:14px;
-}
-.field input:focus{border-color:var(--acc)}
-.kv{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px}
-.kv:last-child{border-bottom:0}
-.kv .k{color:var(--mut)}
-.kv .v{font-weight:700; text-align:right}
-.kv .v.ok{color:#7CE38B}
-.kv .v.warn{color:var(--acc)}
+.set{padding:14px 4px 30px}
+.set h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:20px 0 10px}
+.plrow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.plrow .dot{width:10px;height:10px;border-radius:50%;background:var(--faint);flex:0 0 auto}
+.plrow.on .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.plrow .pn{flex:1;min-width:0;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plrow .pn small{display:block;color:var(--faint);font-weight:400;font-size:11px;margin-top:2px}
+.plrow .del{color:var(--faint);font-size:18px;padding:4px 8px}
+.addbox{background:var(--surface);border:1px dashed rgba(255,255,255,.16);border-radius:var(--r);padding:14px}
+.addbox input{width:100%;background:var(--tile);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--txt);margin-bottom:8px;outline:none}
+.addbox input:focus{border-color:var(--acc)}
+.btn{display:block;width:100%;padding:13px;border-radius:13px;background:var(--acc);color:#04121f;font-weight:800;font-size:15px;margin-top:4px}
+.btn.ghost{background:var(--surface2);color:var(--txt);border:1px solid var(--line)}
+.note{font-size:12px;color:var(--faint);line-height:1.6;margin-top:10px}
+.ver{text-align:center;color:var(--faint);font-size:12px;margin-top:26px}
+
+/* ---------- bottom nav ---------- */
+.navbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(12,17,22,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.nav-in{max-width:720px;margin:0 auto;display:flex}
+.navi{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;color:var(--faint);font-size:10.5px;font-weight:600}
+.navi svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8}
+.navi.on{color:var(--acc)}
 
 /* ---------- toast ---------- */
-.toast{
-  position:fixed; left:50%; bottom:calc(var(--tab-h) + 18px); transform:translateX(-50%) translateY(20px);
-  z-index:100; background:#1D2233; border:1px solid var(--line2); color:var(--txt);
-  padding:12px 18px; border-radius:14px; font-size:13.5px; font-weight:600;
-  opacity:0; pointer-events:none; transition:all .25s; max-width:88vw; text-align:center;
-  box-shadow:var(--shadow);
-}
-.toast.show{opacity:1; transform:translateX(-50%)}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:#222c38;border:1px solid var(--line);color:var(--txt);padding:11px 18px;border-radius:12px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.spin{width:46px;height:46px;border:3px solid rgba(255,255,255,.12);border-top-color:var(--acc);border-radius:50%;margin:60px auto;animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-<!-- ======= КАНАЛЫ ======= -->
-<div class="screen" id="scr-home">
-  <div class="appbar">
-    <div class="logo-dot">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M4 10v4h4l5 4V6l-5 4H4z" fill="#241203"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11" stroke="#241203" stroke-width="2" stroke-linecap="round"/></svg>
-    </div>
-    <div><h1>Эфир</h1><div class="sub" id="home-sub">твоё телевидение</div></div>
-    <div class="sp"></div>
-    <button class="iconbtn" id="btn-search" aria-label="Поиск">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    </button>
+<div class="topbar"><div class="topbar-in">
+  <div class="logo">ЭФИР<span>.</span></div><div class="sp"></div>
+  <button class="icobtn" id="tbSearch" aria-label="Поиск"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+  <button class="icobtn" id="tbSet" aria-label="Настройки"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h.01a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h.01a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v.01a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+</div></div>
+
+<div class="wrap">
+  <div class="tab on" id="tab-channels">
+    <div class="search" id="searchBox" style="display:none"><input id="q" placeholder="Поиск канала…" autocomplete="off"></div>
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="chEmpty" style="display:none"></div>
   </div>
-  <div class="searchrow" id="searchrow">
-    <div class="searchbox">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="q" placeholder="Найти канал…" autocomplete="off">
-    </div>
-  </div>
-  <div class="chips" id="chips"></div>
-  <div id="now-wrap" style="display:none">
-    <div style="padding:0 16px; max-width:760px; margin:0 auto"><div class="sec-t"><span class="live"><i></i>LIVE</span><h2>Сейчас в эфире</h2></div></div>
-    <div class="nowrow" id="nowrow"></div>
-  </div>
-  <div class="wrap"><div class="grid" id="grid"></div><div id="home-empty"></div></div>
+  <div class="tab" id="tab-guide"><div style="height:12px"></div><div id="guide"></div></div>
+  <div class="tab" id="tab-favs"><div style="height:12px"></div><div class="grid" id="favGrid"></div><div class="empty" id="favEmpty" style="display:none">Нажимай на сердечко у канала —<br>и он появится здесь.</div></div>
+  <div class="tab" id="tab-settings"><div class="set" id="settings"></div></div>
 </div>
 
-<!-- ======= ГИД ======= -->
-<div class="screen" id="scr-guide">
-  <div class="appbar">
-    <div><h1>Телепрограмма</h1><div class="sub" id="guide-sub">что идёт прямо сейчас</div></div>
-  </div>
-  <div class="wrap" id="guide-list"></div>
-</div>
-
-<!-- ======= ИЗБРАННОЕ ======= -->
-<div class="screen" id="scr-fav">
-  <div class="appbar">
-    <div><h1>Избранное</h1><div class="sub" id="fav-sub"></div></div>
-  </div>
-  <div class="wrap"><div class="grid" id="fav-grid"></div><div id="fav-empty"></div></div>
-</div>
-
-<!-- ======= НАСТРОЙКИ ======= -->
-<div class="screen" id="scr-set">
-  <div class="appbar">
-    <div><h1>Настройки</h1><div class="sub">плейлисты и программа</div></div>
-  </div>
-  <div class="wrap">
-    <div class="set-card">
-      <h3>Плейлисты</h3>
-      <div class="hint">Ссылка на M3U-плейлист вставляется только здесь. Можно хранить несколько и переключаться между ними.</div>
-      <div id="pl-list"></div>
-      <div class="field"><label>Название</label><input id="pl-name" placeholder="Например: Мой провайдер" autocomplete="off"></div>
-      <div class="field"><label>Ссылка на плейлист (M3U / M3U8)</label><input id="pl-url" placeholder="https://…" inputmode="url" autocomplete="off"></div>
-      <div class="field"><label>Ссылка на телепрограмму (XMLTV, необязательно)</label><input id="pl-epg" placeholder="Если не подхватится автоматически" inputmode="url" autocomplete="off"></div>
-      <button class="btn" id="pl-add" style="width:100%">Добавить плейлист</button>
-    </div>
-    <div class="set-card">
-      <h3>Загрузка</h3>
-      <div class="hint">Если плейлист не грузится напрямую («Failed to fetch») — это браузер блокирует запрос к серверу. Включи прокси: приложение подтянет плейлист через промежуточный сервер.</div>
-      <div class="chips" id="proxy-chips" style="padding:0; margin:0 0 4px; max-width:none"></div>
-      <div class="field" id="home-token-wrap" style="margin:12px 0 0">
-        <label>Токен домашнего прокси</label>
-        <input id="home-token" type="password" placeholder="Вставь токен из чата" autocomplete="off">
-      </div>
-      <div class="hint" style="margin:10px 0 0; font-size:12px">«Домашний» — твой личный прокси: запросы идут с «человеческими» заголовками, сервер провайдера их не режет. Токен хранится только на этом устройстве.</div>
-    </div>
-    <div class="set-card">
-      <h3>Данные</h3>
-      <div class="hint">Программа передач подгружается из плейлиста автоматически.</div>
-      <div class="kv"><span class="k">Каналов загружено</span><span class="v" id="st-channels">—</span></div>
-      <div class="kv"><span class="k">Телепрограмма</span><span class="v" id="st-epg">—</span></div>
-      <div class="kv"><span class="k">Активный плейлист</span><span class="v" id="st-active" style="max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">—</span></div>
-      <div style="display:flex; gap:10px; margin-top:14px">
-        <button class="btn ghost" id="btn-reload" style="flex:1">Обновить</button>
-        <button class="btn ghost" id="btn-reset" style="flex:1; color:#FF7B7B">Сбросить всё</button>
-      </div>
-    </div>
-    <div class="set-card">
-      <h3>О приложении</h3>
-      <div class="kv"><span class="k">Эфир</span><span class="v">v1.0</span></div>
-      <div class="kv"><span class="k">Подсказка</span><span class="v warn" style="font-weight:600; font-size:12.5px; max-width:60%">http-потоки не играют на https-странице — тогда поможет кнопка «Скопировать ссылку» в плеере</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- ======= ТАББАР ======= -->
-<nav class="tabbar">
-  <button class="tab" data-tab="home">
-    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2.5"/><path d="M9 21h6"/></svg>
-    Каналы
-  </button>
-  <button class="tab" data-tab="guide">
-    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 5v16"/></svg>
-    Гид
-  </button>
-  <button class="tab" data-tab="fav">
-    <svg viewBox="0 0 24 24"><path d="M12 20.5S3.5 15.4 3.5 9.6A4.6 4.6 0 018.2 5c1.7 0 3 .9 3.8 2.2A4.6 4.6 0 0115.8 5a4.6 4.6 0 014.7 4.6c0 5.8-8.5 10.9-8.5 10.9z"/></svg>
-    Избранное
-  </button>
-  <button class="tab" data-tab="set">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 00-.15-1.4l2-1.5-2-3.4-2.3 1a7 7 0 00-2.4-1.4L13.8 2h-3.6l-.35 2.6a7 7 0 00-2.4 1.4l-2.3-1-2 3.4 2 1.5a7 7 0 000 2.8l-2 1.5 2 3.4 2.3-1a7 7 0 002.4 1.4l.35 2.6h3.6l.35-2.6a7 7 0 002.4-1.4l2.3 1 2-3.4-2-1.5c.1-.45.15-.92.15-1.4z"/></svg>
-    Настройки
-  </button>
-</nav>
-
-<!-- ======= ПЛЕЕР ======= -->
 <div class="player" id="player">
-  <div class="p-head">
-    <button class="iconbtn" id="p-back" aria-label="Назад">
-      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
-    </button>
-    <div class="t"><div class="nm" id="p-name">—</div><div class="gr" id="p-group">—</div></div>
-    <button class="iconbtn" id="p-fav" aria-label="В избранное">
-      <svg viewBox="0 0 24 24"><path d="M12 20.5S3.5 15.4 3.5 9.6A4.6 4.6 0 018.2 5c1.7 0 3 .9 3.8 2.2A4.6 4.6 0 0115.8 5a4.6 4.6 0 014.7 4.6c0 5.8-8.5 10.9-8.5 10.9z"/></svg>
-    </button>
-  </div>
-  <div class="p-video">
-    <video id="video" controls playsinline preload="auto"></video>
-    <div class="mixed" id="mixed" style="display:none">
-      <div class="t">Видео заблокировано браузером</div>
-      <div class="d">Страница открыта через защищённое соединение (https), а поток канала идёт по обычному http — браузер такое видео не показывает.</div>
-      <div class="row">
-        <button class="btn" id="m-copy">Скопировать ссылку</button>
-        <button class="btn ghost" id="m-hide">Всё равно попробовать</button>
-      </div>
-      <div class="d" style="font-size:12px">Ссылку можно вставить во внешний плеер, например VLC или MX Player.</div>
-    </div>
-  </div>
-  <div class="p-sec">
-    <div class="p-now" id="p-now" style="display:none">
-      <div class="k">СЕЙЧАС В ЭФИРЕ</div>
-      <div class="v" id="p-now-t">—</div>
-      <div class="tm" id="p-now-tm"></div>
-      <div class="pbar"><i id="p-now-bar" style="width:0%"></i></div>
-      <div class="tm" id="p-next" style="margin-top:8px"></div>
-    </div>
-    <div class="p-actions">
-      <button class="p-act" id="p-copy">
-        <svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2.5 2.5 0 00-2.5-2.5H6A2.5 2.5 0 003.5 6v7.5A2.5 2.5 0 006 16h2"/></svg>
-        Ссылка
-      </button>
-      <button class="p-act" id="p-share">
-        <svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="M8.3 10.8l7.4-3.6M8.3 13.2l7.4 3.6"/></svg>
-        Поделиться
-      </button>
-    </div>
-    <div class="p-tabs"><button class="p-tab on">Программа передач</button></div>
-    <div id="p-prog"></div>
-  </div>
+  <div class="pv"><video id="video" controls playsinline></video><button class="pclose" id="pclose">✕</button></div>
+  <div class="pinfo" id="pinfo"></div>
 </div>
 
+<div class="navbar"><div class="nav-in" id="nav"></div></div>
 <div class="toast" id="toast"></div>
+
 <script>
 "use strict";
-/* ================= ЭФИР v1.0 ================= */
-const $ = s => document.querySelector(s);
-const LS_KEY = 'efir.v1';
-const isHttpsPage = location.protocol === 'https:';
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>(s||"").toLowerCase().replace(/[^a-z0-9а-яё]/gi,"");
+const normLoose=s=>norm(s).replace(/^(телеканал|канал|тв)/,"").replace(/(тв|tv|channel)$/,"");
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),2400)}
+const fmtT=ts=>{const d=new Date(ts);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
 
-let store;
-try { store = JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch(e){ store = null; }
-store = Object.assign({playlists:[], active:null, favs:[], recent:[], epgOverride:{}, proxy:'auto', homeToken:''}, store||{});
-function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); }catch(e){} }
+/* ================= store ================= */
+const LS="efir.v1";
+let S={playlists:[],active:-1,favs:[],epgOverride:""};
+try{Object.assign(S,JSON.parse(localStorage.getItem(LS)||"{}"))}catch(e){}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
 
-const S = {
-  channels:[], groups:[], tvgUrl:'',
-  epg:new Map(), epgName:new Map(), epgCount:0, epgOk:false,
-  cat:'Все', q:'', tab:'home', cur:null, hls:null, progTimer:null
-};
+/* ================= state ================= */
+let channels=[], groups=[], activeGroup="Все", query="";
+let epgById={}, epgByNorm={}, epgCount=0;
+let hls=null, curCh=null;
 
-/* ---------- toast ---------- */
-let toastT=null;
-function toast(msg, ms=2600){
-  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'), ms);
+/* ================= loader: direct, then one quiet fallback ================= */
+async function bufOf(url){
+  const r=await fetch(url,{cache:"no-store"});
+  if(!r.ok) throw new Error("http "+r.status);
+  return await r.arrayBuffer();
+}
+function gunzipMaybe(buf){
+  const b=new Uint8Array(buf);
+  if(b.length>2&&b[0]===0x1f&&b[1]===0x8b&&typeof DecompressionStream!=="undefined"){
+    const ds=new DecompressionStream("gzip");
+    const w=ds.writable.getWriter();w.write(buf);w.close();
+    return new Response(ds.readable).arrayBuffer();
+  }
+  return Promise.resolve(buf);
+}
+async function loadText(url){
+  const seq=[url];
+  if(url.startsWith("http://")) seq.push("https://"+url.slice(7));
+  for(const u of seq){try{const b=await bufOf(u);return new TextDecoder().decode(await gunzipMaybe(b))}catch(e){}}
+  const fb=["https://api.cors.lol/?url=","https://api.allorigins.win/raw?url="];
+  for(const p of fb){try{const b=await bufOf(p+encodeURIComponent(url));
+    const t=new TextDecoder().decode(await gunzipMaybe(b));
+    if(t&&t.length>80) return t}catch(e){}}
+  throw new Error("load failed");
 }
 
-/* ---------- M3U ---------- */
+/* ================= M3U ================= */
 function parseM3U(text){
-  const lines=text.split(/\r?\n/), out=[];
-  let tvgUrl='';
-  const head=lines[0]||'';
-  if(head.startsWith('#EXTM3U')){
-    const m=head.match(/(?:url-tvg|x-tvg-url)="([^"]*)"/i);
-    if(m) tvgUrl=m[1];
-  }
-  const attrRe=/([\w-]+)="([^"]*)"/g;
-  for(let i=0;i<lines.length;i++){
-    const ln=lines[i].trim();
-    if(!ln.startsWith('#EXTINF')) continue;
-    const comma=ln.indexOf(',');
-    const name=(comma>-1?ln.slice(comma+1):'Без названия').trim()||'Без названия';
-    const attrs={}; let m; attrRe.lastIndex=0;
-    while((m=attrRe.exec(ln))) attrs[m[1]]=m[2];
-    let url='';
-    for(let j=i+1;j<lines.length&&j<i+5;j++){
-      const u=lines[j].trim();
-      if(u&&!u.startsWith('#')){ url=u; i=j; break; }
+  const out=[];let meta=null,tvgUrl=null;
+  for(const raw of text.split(/\r?\n/)){
+    const line=raw.trim();if(!line)continue;
+    if(line.startsWith("#EXTM3U")){
+      const m=line.match(/(?:url-tvg|x-tvg-url)="([^"]+)"/i);if(m)tvgUrl=m[1];continue;
     }
-    if(!url) continue;
-    out.push({
-      name, url,
-      group:(attrs['group-title']||'Разное').trim()||'Разное',
-      logo:attrs['tvg-logo']||'', tvg:attrs['tvg-id']||'',
-      key:url
-    });
+    if(line.startsWith("#EXTINF")){
+      const a={};const re=/([\w-]+)="([^"]*)"/g;let m;
+      while((m=re.exec(line)))a[m[1].toLowerCase()]=m[2];
+      const ci=line.indexOf(",");
+      const nm=(ci>=0?line.slice(ci+1):"").trim()||"Без названия";
+      meta={name:nm,id:a["tvg-id"]||"",logo:a["tvg-logo"]||"",
+        group:(a["group-title"]||"").trim()||"Разное",
+        catchup:a["catchup"]||"",cdays:a["catchup-days"]||"",csrc:a["catchup-source"]||""};
+      continue;
+    }
+    if(line.startsWith("#"))continue;
+    if(meta){out.push(Object.assign(meta,{url:line}));meta=null}
   }
-  return {channels:out, tvgUrl};
+  return{channels:out,tvgUrl};
 }
 
-/* ---------- XMLTV ---------- */
-function xmltvTime(s){
-  const m=String(s).match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s*([+-])(\d{2}):?(\d{2})?/);
-  if(!m) return null;
-  const off=(parseInt(m[8],10)*60+parseInt(m[9]||'0',10))*(m[7]==='+'?1:-1);
-  return new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6])-off*60000).getTime();
+/* ================= XMLTV ================= */
+function xTime(s){
+  if(!s)return null;const m=String(s).match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s*([+-]\d{4})?/);
+  if(!m)return null;const Y=m[1],Mo=m[2],D=m[3],h=m[4],mi=m[5],se=m[6],off=m[7];
+  let d=Date.UTC(+Y,+Mo-1,+D,+h,+mi,+se);
+  if(off){const sg=off[0]==="-"?-1:1;d-=sg*((+off.slice(1,3))*60+(+off.slice(3,5)))*60000}
+  return d;
 }
-const normName=s=>String(s||'').toLowerCase().replace(/[^a-zа-я0-9]+/gi,'');
-function parseXMLTV(text){
-  const doc=new DOMParser().parseFromString(text,'text/xml');
-  if(doc.querySelector('parsererror')) throw new Error('bad xml');
-  const byId=new Map(), byName=new Map();
-  doc.querySelectorAll('channel').forEach(c=>{
-    const id=c.getAttribute('id'); if(!id) return;
-    const dn=c.querySelector('display-name');
-    const nm=dn?dn.textContent.trim():'';
-    byId.set(id,{id,name:nm,progs:[]});
-    if(nm) byName.set(normName(nm),id);
-  });
-  doc.querySelectorAll('programme').forEach(p=>{
-    const ch=byId.get(p.getAttribute('channel')); if(!ch) return;
-    const s=xmltvTime(p.getAttribute('start')), e=xmltvTime(p.getAttribute('stop'));
-    if(s==null||e==null) return;
-    const t=p.querySelector('title'), d=p.querySelector('desc');
-    ch.progs.push({s,e,t:t?t.textContent.trim():'',d:d?d.textContent.trim():''});
-  });
-  let n=0;
-  byId.forEach(c=>{ if(c.progs.length){ c.progs.sort((a,b)=>a.s-b.s); n+=c.progs.length; } });
-  return {byId,byName,count:n};
-}
-async function loadEPG(url){
-  S.epgOk=false; S.epgCount=0;
-  if(!url) return;
-  try{
-    const {buf:raw}=await fetchRaw(url);
-    let buf=raw;
-    const b=new Uint8Array(buf);
-    if(b[0]===0x1f&&b[1]===0x8b){
-      const ds=new DecompressionStream('gzip');
-      buf=await new Response(new Blob([buf]).stream().pipeThrough(ds)).arrayBuffer();
-    }
-    const {byId,byName,count}=parseXMLTV(new TextDecoder().decode(buf));
-    S.epg=byId; S.epgName=byName; S.epgCount=count; S.epgOk=true;
-  }catch(e){ console.warn('EPG:',e); }
+function parseXMLTV(xml){
+  const byId={},byNorm={};let n=0;
+  let doc;try{doc=new DOMParser().parseFromString(xml,"text/xml")}catch(e){return{byId,byNorm,n}}
+  if(doc.querySelector("parsererror"))return{byId,byNorm,n};
+  const names={};
+  const chEls=doc.querySelectorAll("channel");
+  for(let i=0;i<chEls.length;i++){
+    const c=chEls[i],id=c.getAttribute("id");if(!id)continue;
+    const dn=c.querySelector("display-name");
+    if(dn&&dn.textContent.trim())names[id]=dn.textContent.trim();
+  }
+  const prEls=doc.querySelectorAll("programme");
+  for(let i=0;i<prEls.length;i++){
+    const p=prEls[i],ch=p.getAttribute("channel");if(!ch)continue;
+    const s=xTime(p.getAttribute("start")),e=xTime(p.getAttribute("stop"));if(!s)continue;
+    const te=p.querySelector("title"),de=p.querySelector("desc");
+    const title=te&&te.textContent?te.textContent.trim():"";
+    if(!title)continue;
+    const desc=de&&de.textContent?de.textContent.trim():"";
+    (byId[ch]=byId[ch]||[]).push({s:s,e:e||s+3600e3,title:title,desc:desc});n++;
+  }
+  for(const k in byId)byId[k].sort((a,b)=>a.s-b.s);
+  for(const id in byId){
+    const nm=names[id];if(!nm)continue;
+    const k1=norm(nm),k2=normLoose(nm);
+    if(k1&&!byNorm[k1])byNorm[k1]=byId[id];
+    if(k2&&k2!==k1&&!byNorm[k2])byNorm[k2]=byId[id];
+  }
+  return{byId:byId,byNorm:byNorm,n:n};
 }
 function epgFor(ch){
-  if(ch.tvg&&S.epg.get(ch.tvg)) return S.epg.get(ch.tvg).progs;
-  const id=S.epgName.get(normName(ch.name));
-  if(id&&S.epg.get(id)) return S.epg.get(id).progs;
+  if(ch.id&&epgById[ch.id])return epgById[ch.id];
+  const k1=norm(ch.name),k2=normLoose(ch.name);
+  if(epgByNorm[k1])return epgByNorm[k1];
+  if(k2&&epgByNorm[k2])return epgByNorm[k2];
+  if(k1.length>3)for(const k in epgByNorm){
+    if(k.length>3&&(k.indexOf(k1)>=0||k1.indexOf(k)>=0))return epgByNorm[k];
+  }
   return null;
 }
-function nowNext(ch,now){
-  const progs=epgFor(ch); if(!progs) return null;
-  now=now||Date.now();
-  for(let i=0;i<progs.length;i++){
-    const p=progs[i];
-    if(p.s<=now&&now<p.e) return {now:p,next:progs[i+1]||null,progs};
+function nowNext(p){
+  if(!p||!p.length)return null;const t=Date.now();let cur=null,nxt=null;
+  for(let i=0;i<p.length;i++){
+    const e=p[i].e||p[i].s+3600e3;
+    if(p[i].s<=t&&t<e){cur=p[i];nxt=p[i+1]||null;break}
+    if(p[i].s>t){nxt=p[i];break}
   }
-  return {now:null,next:null,progs};
-}
-const fmtT=ts=>new Date(ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-const fmtD=ts=>new Date(ts).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
-
-/* ---------- загрузка с обходом CORS ---------- */
-const PROXIES={
-  allorigins:u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-  corsproxy:u=>'https://corsproxy.io/?url='+encodeURIComponent(u)
-};
-async function fetchRaw(url){
-  if(store.proxy==='home'){
-    const base=await homeBase();
-    if(!base) throw new Error('домашний прокси недоступен');
-    const tok=(store.homeToken||'').trim();
-    if(!tok) throw new Error('вставь токен домашнего прокси в настройках');
-    const target=base+'/fetch?url='+encodeURIComponent(url)+'&t='+encodeURIComponent(tok);
-    let last=null;
-    for(let i=0;i<3;i++){
-      try{
-        // bypass-tunnel-reminder: обход interstitial-страницы localtunnel (иначе HTTP 511)
-        const r=await fetch(target,{cache:'no-store',headers:{'bypass-tunnel-reminder':'1'}});
-        if(!r.ok){
-          let em='HTTP '+r.status;
-          try{ const d=await r.json(); if(d&&d.error) em='прокси: '+d.error; }catch(e){}
-          throw new Error(em);
-        }
-        return {buf:await r.arrayBuffer(), via:'домашний прокси'};
-      }catch(e){ last=e; await new Promise(r=>setTimeout(r,1500)); }
-    }
-    throw last||new Error('Failed to fetch');
-  }
-  const routes =
-    store.proxy==='off' ? [[u=>u,'напрямую']] :
-    store.proxy==='auto' ? [[u=>u,'напрямую'],[PROXIES.allorigins,'через прокси'],[PROXIES.corsproxy,'через прокси']] :
-    [[PROXIES[store.proxy]||(u=>u),'через прокси']];
-  let last=null;
-  for(const [wrap,label] of routes){
-    try{
-      const r=await fetch(wrap(url),{cache:'no-store'});
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return {buf:await r.arrayBuffer(), via:label};
-    }catch(e){ last=e; }
-  }
-  throw last||new Error('Failed to fetch');
-}
-async function fetchText(url){
-  const {buf,via}=await fetchRaw(url);
-  return {text:new TextDecoder().decode(buf), via};
+  return{cur:cur,nxt:nxt};
 }
 
-/* ---------- домашний прокси: адрес туннеля ---------- */
-let homeBaseP=null, homeBaseTs=0;
-async function homeBase(){
-  const now=Date.now();
-  if(!homeBaseP||now-homeBaseTs>600000){
-    homeBaseTs=now;
-    homeBaseP=(async()=>{
-      try{
-        const r=await fetch('https://aukro1408.github.io/puls/push-server.json',{cache:'no-store'});
-        if(!r.ok) return '';
-        const d=await r.json();
-        return String(d.url||'').replace(/\/+$/,'');
-      }catch(e){ return ''; }
-    })();
-  }
-  return homeBaseP;
+/* ================= boot ================= */
+async function boot(){
+  renderNav();renderSettings();
+  if(S.active<0||!S.playlists[S.active]){switchTab("settings");return}
+  await loadAll();
 }
-
-/* ---------- загрузка плейлиста ---------- */
-function activePl(){ return store.playlists.find(p=>p.id===store.active)||null; }
-async function loadActive(){
-  const pl=activePl();
-  if(!pl){ renderAll(); return; }
-  showHomeLoader(true);
+async function loadAll(){
+  const pl=S.playlists[S.active];
+  $("#grid").innerHTML='<div class="spin"></div>';$("#chEmpty").style.display="none";
   try{
-    const {text,via}=await fetchText(pl.url);
-    if(!text.includes('#EXTINF')) throw new Error('это не M3U-плейлист');
-    const {channels,tvgUrl}=parseM3U(text);
-    S.channels=channels; S.tvgUrl=tvgUrl;
-    const gm=new Map();
-    channels.forEach(c=>gm.set(c.group,(gm.get(c.group)||0)+1));
-    S.groups=[...gm.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
-    if(!S.groups.includes(S.cat)) S.cat='Все';
-    $('#home-sub').textContent=pl.name+' · '+channels.length+' кан.';
-    // EPG: ручной URL из настроек → авто из плейлиста
-    const epgUrl=(store.epgOverride[pl.id]||'').trim()||tvgUrl;
-    if(epgUrl){ $('#guide-sub').textContent='загрузка программы…'; await loadEPG(epgUrl); }
-    toast('Загружено каналов: '+channels.length.toLocaleString('ru-RU')+(via==='напрямую'?'':' ('+via+')'));
+    const m3u=await loadText(pl.url);
+    const pr=parseM3U(m3u);
+    channels=pr.channels;
+    const gs={};pr.channels.forEach(c=>gs[c.group]=1);
+    groups=["Все"].concat(Object.keys(gs));
+    activeGroup="Все";query="";$("#q").value="";
+    renderChips();renderGrid();
+    loadEPG(pr.tvgUrl).then(()=>{renderGrid();renderGuide()});
   }catch(e){
-    console.warn(e);
-    toast('Не удалось загрузить плейлист: '+e.message);
-    if(!S.channels.length) $('#home-empty').innerHTML=emptyHtml('📡','Плейлист не загрузился','Проверь ссылку в настройках — возможно, сервер не отдаёт данные.');
-  }finally{
-    showHomeLoader(false); renderAll();
+    $("#grid").innerHTML="";
+    const em=$("#chEmpty");em.style.display="block";
+    em.innerHTML="Не получилось загрузить плейлист.<br>Проверь ссылку в настройках.";
   }
 }
-function showHomeLoader(on){
-  const g=$('#grid');
-  if(on){ g.innerHTML=''; $('#home-empty').innerHTML='<div class="loader"><div class="spin"></div><div>Загружаю каналы…</div></div>'; }
-  else if(!S.channels.length && !$('#home-empty').innerHTML.includes('loader')){ /* keep */ }
-  else if(S.channels.length){ $('#home-empty').innerHTML=''; }
-}
-function emptyHtml(big,t,p){ return `<div class="empty"><div class="big">${big}</div><h3>${t}</h3><p>${p}</p></div>`; }
-
-/* ---------- рендер ---------- */
-function logoErr(el){
-  if(el.dataset.step==='0'){ el.dataset.step='1'; el.src=el.dataset.picon; }
-  else{ const d=el.parentElement; if(d) d.textContent=(el.dataset.name||'?').trim().charAt(0).toUpperCase(); }
-}
-function logoHtml(ch,cls){
-  const name=ch.name||'?';
-  const picon='https://epg.rootu.top/picon/'+encodeURIComponent(name)+'.png';
-  return `<div class="${cls||'lg'}"><img src="${esc(ch.logo||picon)}" alt="" loading="lazy" data-step="${ch.logo?'0':'1'}" data-name="${esc(name)}" data-picon="${esc(picon)}" onerror="logoErr(this)"></div>`;
-}
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-const isFav=ch=>store.favs.includes(ch.key);
-function toggleFav(key){
-  const i=store.favs.indexOf(key);
-  if(i>-1) store.favs.splice(i,1); else store.favs.unshift(key);
-  save(); renderAll();
-  if(S.cur&&S.cur.key===key) syncFavBtn();
-}
-
-function switchTab(t){
-  S.tab=t;
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
-  $('#scr-'+t).classList.add('show');
-  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  window.scrollTo(0,0);
-  if(t==='guide') renderGuide();
-  if(t==='fav') renderFav();
-  if(t==='set') renderSettings();
-}
-
-function renderAll(){
-  renderHome(); renderGuide(); renderFav(); renderSettings();
-}
-
-/* ----- home ----- */
-function filtered(){
-  const q=S.q.trim().toLowerCase();
-  return S.channels.filter(c=>
-    (S.cat==='Все'||c.group===S.cat) &&
-    (!q||c.name.toLowerCase().includes(q))
-  );
-}
-function renderHome(){
-  // chips
-  const gm=new Map(); S.channels.forEach(c=>gm.set(c.group,(gm.get(c.group)||0)+1));
-  let h=`<button class="chip${S.cat==='Все'?' on':''}" data-c="Все">Все<span class="n">${S.channels.length}</span></button>`;
-  S.groups.forEach(g=>{ h+=`<button class="chip${S.cat===g?' on':''}" data-c="${esc(g)}">${esc(g)}<span class="n">${gm.get(g)}</span></button>`; });
-  $('#chips').innerHTML=h;
-  $('#chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ S.cat=b.dataset.c; renderHome(); });
-
-  const list=filtered();
-  const now=Date.now();
-  // сейчас в эфире
-  const live=[];
-  if(S.epgOk){
-    for(const c of S.channels){
-      const nn=nowNext(c,now);
-      if(nn&&nn.now){ live.push({c,nn}); if(live.length>=24) break; }
-    }
-  }
-  if(live.length){
-    $('#now-wrap').style.display='block';
-    $('#nowrow').innerHTML=live.map(({c,nn})=>{
-      const pct=Math.min(100,Math.max(0,(now-nn.now.s)/(nn.now.e-nn.now.s)*100));
-      return `<button class="nowcard" data-k="${esc(c.key)}">
-        <div class="ch">${logoHtml(c)}<div class="nm">${esc(c.name)}</div></div>
-        <div class="pr">${esc(nn.now.t)}</div>
-        <div class="pbar"><i style="width:${pct}%"></i></div>
-        <div class="tm">${fmtT(nn.now.s)} – ${fmtT(nn.now.e)}${nn.next?' · далее: '+esc(nn.next.t):''}</div>
-      </button>`;
-    }).join('');
-    bindChanBtns($('#nowrow'));
-  } else $('#now-wrap').style.display='none';
-
-  // сетка
-  if(!S.channels.length){
-    $('#grid').innerHTML='';
-    if(!activePl()) $('#home-empty').innerHTML=emptyHtml('📺','Пока пусто','Добавь ссылку на M3U-плейлист в настройках — и здесь появятся каналы.')+
-      `<div style="text-align:center"><button class="btn" onclick="switchTab('set')">Открыть настройки</button></div>`;
-    return;
-  }
-  if(!list.length){
-    $('#grid').innerHTML='';
-    $('#home-empty').innerHTML=emptyHtml('🔍','Ничего не найдено','Попробуй другой запрос или категорию.');
-    return;
-  }
-  $('#home-empty').innerHTML='';
-  $('#grid').innerHTML=list.slice(0,600).map(c=>{
-    const nn=S.epgOk?nowNext(c,now):null;
-    const cw=nn&&nn.now?`<div class="cw">${esc(nn.now.t)}</div>`:'';
-    return `<button class="chan" data-k="${esc(c.key)}">
-      <span class="favb${isFav(c)?' on':''}" data-f="${esc(c.key)}">
-        <svg viewBox="0 0 24 24"><path d="M12 20.5S3.5 15.4 3.5 9.6A4.6 4.6 0 018.2 5c1.7 0 3 .9 3.8 2.2A4.6 4.6 0 0115.8 5a4.6 4.6 0 014.7 4.6c0 5.8-8.5 10.9-8.5 10.9z"/></svg>
-      </span>
-      ${logoHtml(c)}
-      <div class="nm">${esc(c.name)}</div>${cw}
-    </button>`;
-  }).join('');
-  if(list.length>600) $('#home-empty').innerHTML=`<div class="empty"><p>Показаны первые 600 — уточни поиск.</p></div>`;
-  bindChanBtns($('#grid'));
-}
-function bindChanBtns(root){
-  root.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>openPlayer(b.dataset.k));
-  root.querySelectorAll('[data-f]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); toggleFav(b.dataset.f); });
-}
-
-/* ----- guide ----- */
-function renderGuide(){
-  const box=$('#guide-list');
-  if(!S.channels.length){ box.innerHTML=emptyHtml('📺','Нет каналов','Сначала добавь плейлист в настройках.'); return; }
-  if(!S.epgOk){
-    box.innerHTML=emptyHtml('🗞','Программа недоступна','В этом плейлисте нет телепрограммы. Каналы можно смотреть из вкладки «Каналы».');
-    return;
-  }
-  const now=Date.now();
-  const rows=[];
-  for(const c of S.channels){
-    const nn=nowNext(c,now);
-    if(nn&&(nn.now||nn.next)){ rows.push({c,nn}); if(rows.length>=300) break; }
-  }
-  if(!rows.length){ box.innerHTML=emptyHtml('🗞','Программа пуста','На это время передач не нашлось.'); return; }
-  $('#guide-sub').textContent=fmtD(now)+' · '+rows.length+' кан.';
-  box.innerHTML=rows.map(({c,nn})=>{
-    let mid='';
-    if(nn.now){
-      const pct=Math.min(100,Math.max(0,(now-nn.now.s)/(nn.now.e-nn.now.s)*100));
-      mid=`<div class="pr">${esc(nn.now.t)}</div><div class="pbar"><i style="width:${pct}%"></i></div>
-           <div class="nx"><b>Далее</b> · ${nn.next?fmtT(nn.next.s)+' '+esc(nn.next.t):'—'}</div>`;
-    } else {
-      mid=`<div class="pr" style="color:var(--mut)">Сейчас перерыв</div>
-           <div class="nx"><b>Далее</b> · ${nn.next?fmtT(nn.next.s)+' '+esc(nn.next.t):'—'}</div>`;
-    }
-    return `<button class="grow" data-k="${esc(c.key)}">${logoHtml(c)}
-      <div class="inf"><div class="nm">${esc(c.name)}</div>${mid}</div></button>`;
-  }).join('');
-  bindChanBtns(box);
-}
-
-/* ----- fav ----- */
-function renderFav(){
-  const list=S.channels.filter(isFav);
-  $('#fav-sub').textContent=list.length?list.length+' кан.':'';
-  if(!list.length){
-    $('#fav-grid').innerHTML='';
-    $('#fav-empty').innerHTML=emptyHtml('🧡','Пока пусто','Жми на сердечко у канала — и он появится здесь.');
-    return;
-  }
-  $('#fav-empty').innerHTML='';
-  $('#fav-grid').innerHTML=list.map(c=>`
-    <button class="chan" data-k="${esc(c.key)}">
-      <span class="favb on" data-f="${esc(c.key)}">
-        <svg viewBox="0 0 24 24"><path d="M12 20.5S3.5 15.4 3.5 9.6A4.6 4.6 0 018.2 5c1.7 0 3 .9 3.8 2.2A4.6 4.6 0 0115.8 5a4.6 4.6 0 014.7 4.6c0 5.8-8.5 10.9-8.5 10.9z"/></svg>
-      </span>${logoHtml(c)}<div class="nm">${esc(c.name)}</div>
-    </button>`).join('');
-  bindChanBtns($('#fav-grid'));
-}
-
-/* ----- settings ----- */
-function maskUrl(u){
-  try{ const x=new URL(u); return x.host+(x.pathname.length>18?x.pathname.slice(0,18)+'…':x.pathname); }
-  catch(e){ return String(u).slice(0,42)+'…'; }
-}
-function renderSettings(){
-  const box=$('#pl-list');
-  if(!store.playlists.length){
-    box.innerHTML=`<div class="hint" style="margin-bottom:12px">Плейлистов пока нет — добавь первый ниже 👇</div>`;
-  } else {
-    box.innerHTML=store.playlists.map(p=>`
-      <div class="pl${p.id===store.active?' active':''}">
-        <div class="nm">${p.id===store.active?'● ':''}${esc(p.name)}</div>
-        <div class="url">${esc(maskUrl(p.url))}</div>
-        <div class="row">
-          ${p.id===store.active?'':'<button class="use" data-use="'+p.id+'">Использовать</button>'}
-          <button class="del" data-del="${p.id}">Удалить</button>
-        </div>
-      </div>`).join('');
-    box.querySelectorAll('[data-use]').forEach(b=>b.onclick=()=>{ store.active=b.dataset.use; save(); loadActive(); });
-    box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
-      store.playlists=store.playlists.filter(p=>p.id!==b.dataset.del);
-      delete store.epgOverride[b.dataset.del];
-      if(store.active===b.dataset.del){ store.active=store.playlists[0]?store.playlists[0].id:null; }
-      save(); loadActive(); toast('Плейлист удалён');
-    });
-  }
-  $('#st-channels').textContent=S.channels.length?S.channels.length.toLocaleString('ru-RU'):'—';
-  const e=$('#st-epg');
-  if(!activePl()){ e.textContent='—'; e.className='v'; }
-  else if(S.epgOk){ e.textContent='ок · '+S.epgCount.toLocaleString('ru-RU')+' передач'; e.className='v ok'; }
-  else { e.textContent='нет'; e.className='v warn'; }
-  $('#st-active').textContent=activePl()?activePl().name:'—';
-  // прокси
-  const modes=[['auto','Авто'],['home','Домашний'],['allorigins','Прокси 1'],['corsproxy','Прокси 2'],['off','Без прокси']];
-  $('#proxy-chips').innerHTML=modes.map(([v,t])=>
-    `<button class="chip${store.proxy===v?' on':''}" data-px="${v}">${t}</button>`).join('');
-  $('#proxy-chips').querySelectorAll('[data-px]').forEach(b=>b.onclick=()=>{
-    store.proxy=b.dataset.px; save(); renderSettings();
-    if(b.dataset.px==='home'&&!(store.homeToken||'').trim()) toast('Вставь токен домашнего прокси 👇',3200);
-    else loadActive();
-  });
-  const tw=$('#home-token-wrap'), ti=$('#home-token');
-  tw.style.display=store.proxy==='home'?'block':'none';
-  if(ti.value!==(store.homeToken||'')) ti.value=store.homeToken||'';
-  ti.onchange=()=>{ store.homeToken=ti.value.trim(); save(); toast('Токен сохранён'); loadActive(); };
-}
-
-/* ---------- плеер ---------- */
-function openPlayer(key){
-  const ch=S.channels.find(c=>c.key===key); if(!ch) return;
-  S.cur=ch;
-  $('#p-name').textContent=ch.name;
-  $('#p-group').textContent=ch.group;
-  syncFavBtn();
-  renderPlayerEpg();
-  $('#player').classList.add('show');
-  document.body.style.overflow='hidden';
-  playStream(ch);
-  store.recent=[key,...store.recent.filter(k=>k!==key)].slice(0,20); save();
-}
-function closePlayer(){
-  $('#player').classList.remove('show');
-  document.body.style.overflow='';
-  const v=$('#video');
-  try{ v.pause(); v.removeAttribute('src'); v.load(); }catch(e){}
-  if(S.hls){ try{S.hls.destroy();}catch(e){} S.hls=null; }
-  clearInterval(S.progTimer); S.cur=null;
-}
-function syncFavBtn(){ $('#p-fav').classList.toggle('on', S.cur&&isFav(S.cur)); }
-function playStream(ch){
-  const v=$('#video'), url=ch.url;
-  const httpBlocked=isHttpsPage&&url.startsWith('http://');
-  $('#mixed').style.display=httpBlocked?'flex':'none';
-  if(S.hls){ try{S.hls.destroy();}catch(e){} S.hls=null; }
-  const isHls=/\.m3u8($|\?)/i.test(url);
+async function loadEPG(tvgUrl){
+  epgById={};epgByNorm={};epgCount=0;
+  const url=(S.epgOverride||"").trim()||tvgUrl;
+  if(!url)return;
   try{
-    if(isHls&&window.Hls&&Hls.isSupported()){
-      const hls=new Hls({maxBufferLength:30,liveSyncDurationCount:3});
-      S.hls=hls;
-      hls.loadSource(url); hls.attachMedia(v);
-      hls.on(Hls.Events.ERROR,(ev,data)=>{
-        if(data.fatal){ toast('Ошибка потока: '+data.type); }
-      });
-    } else { v.src=url; }
-    if(!httpBlocked){ const pr=v.play(); if(pr&&pr.catch) pr.catch(()=>{}); }
-  }catch(e){ toast('Не удалось запустить: '+e.message); }
-  v.onerror=()=>{ if(!httpBlocked) toast('Видео не открылось — возможно, поток недоступен'); };
+    const xml=await loadText(url);
+    const r=parseXMLTV(xml);
+    epgById=r.byId;epgByNorm=r.byNorm;epgCount=r.n;
+  }catch(e){}
 }
-function renderPlayerEpg(){
-  const ch=S.cur, now=Date.now();
-  const box=$('#p-prog'), nowBox=$('#p-now');
-  const nn=S.epgOk?nowNext(ch,now):null;
-  if(nn&&nn.now){
-    nowBox.style.display='block';
-    $('#p-now-t').textContent=nn.now.t;
-    $('#p-now-tm').textContent=fmtT(nn.now.s)+' – '+fmtT(nn.now.e);
-    const pct=Math.min(100,Math.max(0,(now-nn.now.s)/(nn.now.e-nn.now.s)*100));
-    $('#p-now-bar').style.width=pct+'%';
-    $('#p-next').textContent=nn.next?('Далее в '+fmtT(nn.next.s)+' — '+nn.next.t):'';
-  } else nowBox.style.display='none';
-  const progs=nn?nn.progs:null;
-  if(!progs||!progs.length){
-    box.innerHTML=`<div class="empty" style="padding:28px"><p>Программа для этого канала недоступна.</p></div>`;
-    return;
+
+/* ================= channels tab ================= */
+function renderChips(){
+  $("#chips").innerHTML=groups.map(g=>
+    `<button class="chip${g===activeGroup?" on":""}" data-g="${esc(g)}">${esc(g)}</button>`).join("");
+  const bs=$("#chips").querySelectorAll(".chip");
+  for(let i=0;i<bs.length;i++)bs[i].onclick=()=>{activeGroup=bs[i].dataset.g;renderChips();renderGrid()};
+}
+function filtered(){
+  const q=norm(query);
+  return channels.filter(c=>(activeGroup==="Все"||c.group===activeGroup)&&(!q||norm(c.name).indexOf(q)>=0));
+}
+function logoTile(ch,cls){
+  const nm=(ch.name||"").trim();
+  const ini=esc((nm.charAt(0)||"•").toUpperCase());
+  const img=ch.logo?`<img src="${esc(ch.logo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display=''">`:"";
+  return `<div class="${cls}">${img}<span class="ini"${img?' style="display:none"':""}>${ini}</span></div>`;
+}
+function cardHTML(c,i,withProg){
+  const nn=nowNext(epgFor(c));
+  const pr=nn&&nn.cur?nn.cur.title:"";
+  const pct=nn&&nn.cur?Math.min(100,Math.max(0,(Date.now()-nn.cur.s)/((nn.cur.e||nn.cur.s+3600e3)-nn.cur.s)*100)):0;
+  const fv=S.favs.indexOf(c.url)>=0;
+  return `<button class="card" data-i="${i}">
+    <span class="fav${fv?" on":""}" data-f="${i}"><svg viewBox="0 0 24 24"><path d="M12 20.5s-7.2-4.7-9.3-8.8C1.2 8.7 3 5.4 6.3 5.4c1.9 0 3.2 1 4 2.2h3.4c.8-1.2 2.1-2.2 4-2.2 3.3 0 5.1 3.3 3.6 6.3-2.1 4.1-9.3 8.8-9.3 8.8z"/></svg></span>
+    ${logoTile(c,"tile")}
+    <span class="nm">${esc(c.name)}</span>
+    ${withProg?`<span class="pr">${esc(pr)}</span><span class="bar"><i style="width:${pct}%"></i></span>`:""}
+  </button>`;
+}
+function renderGrid(){
+  const list=filtered();
+  $("#grid").innerHTML=list.map(c=>cardHTML(c,channels.indexOf(c),true)).join("");
+  const em=$("#chEmpty");
+  if(!list.length){em.style.display="block";em.textContent=channels.length?"Ничего не найдено.":"Плейлист пуст."}
+  else em.style.display="none";
+  bindCards($("#grid"));
+}
+function bindCards(root){
+  const els=root.querySelectorAll(".card");
+  for(let i=0;i<els.length;i++)els[i].onclick=e=>{
+    const f=e.target.closest("[data-f]");
+    if(f){e.stopPropagation();toggleFav(channels[+f.dataset.f].url);return}
+    openPlayer(channels[+els[i].dataset.i]);
+  };
+}
+function toggleFav(url){
+  const i=S.favs.indexOf(url);
+  if(i>=0)S.favs.splice(i,1);else S.favs.push(url);
+  save();renderGrid();renderFavs();
+}
+
+/* ================= guide tab ================= */
+function renderGuide(){
+  const box=$("#guide");
+  const withEpg=channels.filter(c=>epgFor(c));
+  if(!withEpg.length){box.innerHTML=`<div class="empty">Программа появится,<br>когда загрузится телегид.</div>`;return}
+  const t=Date.now();let html="";
+  for(let k=0;k<withEpg.length;k++){
+    const c=withEpg[k],nn=nowNext(epgFor(c));
+    if(!nn||!nn.cur)continue;
+    const pct=Math.min(100,Math.max(0,(t-nn.cur.s)/((nn.cur.e||nn.cur.s+3600e3)-nn.cur.s)*100));
+    html+=`<button class="grow" data-u="${esc(c.url)}">
+      ${logoTile(c,"gtile")}
+      <span class="gi"><span class="gn">${esc(c.name)}</span>
+      <span class="gp"><b>${fmtT(nn.cur.s)}</b>${esc(nn.cur.title)}</span>
+      ${nn.nxt?`<span class="gn2">${fmtT(nn.nxt.s)} · ${esc(nn.nxt.title)}</span>`:""}
+      <span class="gbar"><i style="width:${pct}%"></i></span></span>
+    </button>`;
   }
-  const dayStart=new Date(); dayStart.setHours(0,0,0,0);
-  const today=progs.filter(p=>p.e>dayStart.getTime()&&p.s<dayStart.getTime()+864e5);
-  const list=today.length?today:progs.slice(0,40);
-  box.innerHTML=list.map(p=>{
-    const isNow=p.s<=now&&now<p.e;
-    return `<div class="prog${isNow?' now':''}"><span class="dot"></span>
-      <div class="tm">${fmtT(p.s)}<br>– ${fmtT(p.e)}</div>
-      <div><div class="tt">${esc(p.t)||'Без названия'}</div>${p.d?`<div class="ds">${esc(p.d.slice(0,160))}</div>`:''}</div>
+  box.innerHTML=html||`<div class="empty">Сейчас в эфире ничего нет.</div>`;
+  const bs=box.querySelectorAll(".grow");
+  for(let i=0;i<bs.length;i++)bs[i].onclick=()=>{
+    for(let j=0;j<channels.length;j++)if(channels[j].url===bs[i].dataset.u){openPlayer(channels[j]);break}
+  };
+}
+
+/* ================= favorites ================= */
+function renderFavs(){
+  const list=channels.filter(c=>S.favs.indexOf(c.url)>=0);
+  $("#favGrid").innerHTML=list.map(c=>cardHTML(c,channels.indexOf(c),false)).join("");
+  $("#favEmpty").style.display=list.length?"none":"block";
+  bindCards($("#favGrid"));
+}
+
+/* ================= player ================= */
+function stopStream(){
+  try{if(hls){hls.destroy();hls=null}}catch(e){}
+  const v=$("#video");try{v.pause()}catch(e){}
+  v.removeAttribute("src");v.load();
+}
+function openPlayer(ch,fromStart){
+  curCh=ch;
+  const nn=nowNext(epgFor(ch));
+  const isHttp=ch.url.indexOf("https://")!==0;
+  let url=ch.url,catchupUsed=false;
+  if(fromStart&&ch.catchup&&nn&&nn.cur){
+    const u=Math.floor(nn.cur.s/1000),l=Math.floor(Date.now()/1000);
+    url=ch.url+(ch.url.indexOf("?")>=0?"&":"?")+"utc="+u+"&lutc="+l;
+    catchupUsed=true;
+  }
+  $("#player").classList.add("on");document.body.style.overflow="hidden";
+  const info=$("#pinfo");
+  const pct=nn&&nn.cur?Math.min(100,Math.max(0,(Date.now()-nn.cur.s)/((nn.cur.e||nn.cur.s+3600e3)-nn.cur.s)*100)):0;
+  const canStart=!!(ch.catchup&&nn&&nn.cur&&(Date.now()-nn.cur.s>90000));
+  const plist=(epgFor(ch)||[]).filter(p=>(p.e||p.s+3600e3)>Date.now()-3600e3).slice(0,12);
+  let h=`<div class="pch">${logoTile(ch,"ptile")}<div><div class="pnm">${esc(ch.name)}</div>
+    <div style="font-size:12px;color:var(--faint)">${esc(ch.group)}${catchupUsed?' · <span style="color:var(--ok)">сначала</span>':""}</div></div></div>`;
+  if(nn&&nn.cur)h+=`<div class="pnow"><b>${fmtT(nn.cur.s)}–${fmtT(nn.cur.e||nn.cur.s+3600e3)}</b> · ${esc(nn.cur.title)}</div>`;
+  if(nn&&nn.nxt)h+=`<div class="pnext">Далее: ${fmtT(nn.nxt.s)} · ${esc(nn.nxt.title)}</div>`;
+  if(nn&&nn.cur)h+=`<div class="pbar"><i style="width:${pct}%"></i></div>`;
+  h+=`<div class="pbtns">${canStart?`<button class="pbtn pri" id="bStart">▶ Сначала</button>`:""}<button class="pbtn" id="bCopy">Ссылка</button><button class="pbtn" id="bShare">Поделиться</button></div>`;
+  if(isHttp)h+=`<div class="pext"><b>Поток без шифрования.</b><br>Браузер не даёт смотреть http на https-странице — это ограничение, а не поломка. Открой ссылку во внешнем плеере: VLC или MX Player подхватят её сами.</div>`;
+  if(plist.length){
+    h+=`<div class="plist"><h4>Программа</h4>`;
+    for(let i=0;i<plist.length;i++){const p=plist[i];
+      const cur=nn&&nn.cur&&p.s===nn.cur.s;
+      h+=`<div class="prow${cur?" cur":""}"><span class="t">${fmtT(p.s)}</span><span class="tt">${esc(p.title)}${p.desc?`<small>${esc(p.desc.slice(0,140))}</small>`:""}</span></div>`;
+    }
+    h+=`</div>`;
+  }
+  info.innerHTML=h;
+  $("#bCopy").onclick=()=>{if(navigator.clipboard)navigator.clipboard.writeText(ch.url).then(()=>toast("Ссылка скопирована")).catch(()=>toast("Не вышло скопировать"));else toast("Копирование недоступно")};
+  $("#bShare").onclick=()=>{if(navigator.share)navigator.share({title:ch.name,url:ch.url}).catch(()=>{});else $("#bCopy").click()};
+  const bs=$("#bStart");if(bs)bs.onclick=()=>openPlayer(ch,true);
+  if(isHttp)return;
+  stopStream();
+  const v=$("#video");
+  const looksHls=url.indexOf(".m3u8")>=0;
+  if(window.Hls&&Hls.isSupported()&&(looksHls||!v.canPlayType("application/vnd.apple.mpegurl"))){
+    hls=new Hls({maxBufferLength:30});
+    hls.loadSource(url);hls.attachMedia(v);
+    hls.on(Hls.Events.ERROR,(ev,d)=>{if(d.fatal){stopStream();v.src=url;v.play().catch(()=>{})}});
+  }else{v.src=url}
+  v.play().catch(()=>{});
+}
+$("#pclose").onclick=()=>{$("#player").classList.remove("on");document.body.style.overflow="";stopStream();curCh=null};
+
+/* ================= settings ================= */
+function shortUrl(u){try{const x=new URL(u);return x.host+x.pathname.slice(0,26)}catch(e){return String(u).slice(0,40)}}
+function renderSettings(){
+  const el=$("#settings");
+  let rows="";
+  for(let i=0;i<S.playlists.length;i++){const p=S.playlists[i];
+    rows+=`<div class="plrow${i===S.active?" on":""}" data-i="${i}">
+      <span class="dot"></span>
+      <span class="pn">${esc(p.name)}<small>${esc(shortUrl(p.url))}</small></span>
+      <button class="del" data-d="${i}" aria-label="Удалить">×</button>
     </div>`;
-  }).join('');
-  clearInterval(S.progTimer);
-  S.progTimer=setInterval(()=>{ if(S.cur) renderPlayerEpg(); },60000);
-}
-
-/* ---------- события ---------- */
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
-$('#p-back').onclick=closePlayer;
-$('#p-fav').onclick=()=>{ if(S.cur) toggleFav(S.cur.key); };
-$('#p-copy').onclick=()=>copyLink();
-$('#m-copy').onclick=()=>copyLink();
-$('#m-hide').onclick=()=>{ $('#mixed').style.display='none'; const v=$('#video'); const pr=v.play(); if(pr&&pr.catch)pr.catch(()=>{}); };
-$('#p-share').onclick=async()=>{
-  if(!S.cur) return;
-  const data={title:S.cur.name,text:'Смотри: '+S.cur.name,url:S.cur.url};
-  if(navigator.share){ try{ await navigator.share(data); }catch(e){} }
-  else copyLink();
-};
-function copyLink(){
-  if(!S.cur) return;
-  const done=()=>toast('Ссылка скопирована');
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(S.cur.url).then(done).catch(()=>fallbackCopy());
-  else fallbackCopy();
-  function fallbackCopy(){
-    const ta=document.createElement('textarea'); ta.value=S.cur.url;
-    document.body.appendChild(ta); ta.select();
-    try{ document.execCommand('copy'); done(); }catch(e){ toast('Не скопировалось'); }
-    ta.remove();
   }
+  el.innerHTML=`
+    <h3>Плейлисты</h3>
+    <div id="plList">${rows||'<div class="note">Пока пусто — добавь первый плейлист ниже.</div>'}</div>
+    <div class="addbox" style="margin-top:10px">
+      <input id="plName" placeholder="Название — например, Мой ТВ" autocomplete="off">
+      <input id="plUrl" placeholder="Ссылка на m3u…" inputmode="url" autocomplete="off">
+      <button class="btn" id="plAdd">Добавить</button>
+    </div>
+    <h3>Телепрограмма</h3>
+    <div class="addbox">
+      <input id="epgUrl" placeholder="Ссылка на XMLTV (необязательно)" inputmode="url" value="${esc(S.epgOverride)}" autocomplete="off">
+      <button class="btn ghost" id="epgSave">Сохранить</button>
+      <div class="note">Если пусто — адрес берётся из самого плейлиста (url-tvg).${epgCount?`<br>Загружено передач: <b style="color:var(--txt)">${epgCount}</b>`:""}</div>
+    </div>
+    <h3>Данные</h3>
+    <button class="btn ghost" id="btnReload">Обновить каналы и программу</button>
+    <div class="ver">Эфир 2.0 · собрано с ноля</div>`;
+  const rs=el.querySelectorAll(".plrow");
+  for(let i=0;i<rs.length;i++)rs[i].onclick=e=>{
+    if(e.target.closest("[data-d]"))return;
+    S.active=+rs[i].dataset.i;save();renderSettings();loadAll();
+  };
+  const ds=el.querySelectorAll("[data-d]");
+  for(let i=0;i<ds.length;i++)ds[i].onclick=e=>{
+    e.stopPropagation();
+    S.playlists.splice(+ds[i].dataset.d,1);
+    if(S.active>=S.playlists.length)S.active=S.playlists.length-1;
+    save();renderSettings();if(S.active>=0)loadAll();
+  };
+  $("#plAdd").onclick=()=>{
+    const name=$("#plName").value.trim()||"Плейлист "+(S.playlists.length+1);
+    const url=$("#plUrl").value.trim();
+    if(!url){toast("Вставь ссылку");return}
+    S.playlists.push({name:name,url:url});S.active=S.playlists.length-1;
+    save();renderSettings();loadAll();toast("Плейлист добавлен");
+  };
+  $("#epgSave").onclick=()=>{S.epgOverride=$("#epgUrl").value.trim();save();renderSettings();loadAll();toast("Сохранено")};
+  $("#btnReload").onclick=()=>{if(S.active>=0)loadAll();else toast("Сначала добавь плейлист")};
 }
-$('#btn-search').onclick=()=>{
-  const r=$('#searchrow'), open=r.classList.toggle('show');
-  $('#btn-search').classList.toggle('on',open);
-  if(open) $('#q').focus(); else { S.q=''; $('#q').value=''; renderHome(); }
-};
-$('#q').addEventListener('input',e=>{ S.q=e.target.value; renderHome(); });
 
-/* настройки: добавление плейлиста */
-$('#pl-add').onclick=()=>{
-  const name=$('#pl-name').value.trim()||'Плейлист '+(store.playlists.length+1);
-  const url=$('#pl-url').value.trim();
-  const epg=$('#pl-epg').value.trim();
-  if(!/^https?:\/\/.+\..+/i.test(url)){ toast('Похоже, это не ссылка'); return; }
-  const id='pl'+Date.now().toString(36);
-  store.playlists.push({id,name,url});
-  if(epg) store.epgOverride[id]=epg;
-  store.active=id; save();
-  $('#pl-name').value=''; $('#pl-url').value=''; $('#pl-epg').value='';
-  toast('Плейлист добавлен'); loadActive();
-};
-$('#btn-reload').onclick=()=>{ toast('Обновляю…'); loadActive(); };
-$('#btn-reset').onclick=()=>{
-  if(!confirm('Удалить все плейлисты, избранное и настройки?')) return;
-  store={playlists:[],active:null,favs:[],recent:[],epgOverride:{}}; save();
-  S.channels=[]; S.groups=[]; S.epg=new Map(); S.epgName=new Map(); S.epgOk=false; S.cat='Все';
-  $('#home-sub').textContent='твоё телевидение';
-  renderAll(); switchTab('set'); toast('Всё сброшено');
-};
-
-/* ---------- старт ---------- */
-switchTab(store.playlists.length?'home':'set');
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+/* ================= nav ================= */
+const TABS=[
+  {id:"channels",t:"Каналы",svg:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8"/>'},
+  {id:"guide",t:"Гид",svg:'<path d="M4 6h16M4 12h16M4 18h10"/>'},
+  {id:"favs",t:"Избранное",svg:'<path d="M12 20.5s-7.2-4.7-9.3-8.8C1.2 8.7 3 5.4 6.3 5.4c1.9 0 3.2 1 4 2.2h3.4c.8-1.2 2.1-2.2 4-2.2 3.3 0 5.1 3.3 3.6 6.3-2.1 4.1-9.3 8.8-9.3 8.8z"/>'},
+  {id:"settings",t:"Настройки",svg:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>'}
+];
+function renderNav(){
+  $("#nav").innerHTML=TABS.map(t=>`<button class="navi${t.id==="channels"?" on":""}" data-t="${t.id}"><svg viewBox="0 0 24 24">${t.svg}</svg>${t.t}</button>`).join("");
+  const bs=$("#nav").querySelectorAll(".navi");
+  for(let i=0;i<bs.length;i++)bs[i].onclick=()=>switchTab(bs[i].dataset.t);
 }
-loadActive();
-if(!store.playlists.length) setTimeout(()=>toast('Добавь ссылку на плейлист 👇',3200),800);
+function switchTab(id){
+  const ns=document.querySelectorAll(".navi");
+  for(let i=0;i<ns.length;i++)ns[i].classList.toggle("on",ns[i].dataset.t===id);
+  const ts=document.querySelectorAll(".tab");
+  for(let i=0;i<ts.length;i++)ts[i].classList.toggle("on",ts[i].id==="tab-"+id);
+  if(id==="guide")renderGuide();
+  if(id==="favs")renderFavs();
+  if(id==="settings")renderSettings();
+  window.scrollTo(0,0);
+}
+$("#tbSet").onclick=()=>switchTab("settings");
+$("#tbSearch").onclick=()=>{switchTab("channels");const s=$("#searchBox");s.style.display=s.style.display==="none"?"block":"none";if(s.style.display!=="none")$("#q").focus()};
+$("#q").addEventListener("input",e=>{query=e.target.value;renderGrid()});
+
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+boot();
 </script>
 </body>
 </html>

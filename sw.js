@@ -1,10 +1,10 @@
 /* Эфир — service worker */
-const VER = 'efir-v1';
+const VER = 'efir-v2';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png',
   'icons/icon-maskable-512.png', 'icons/icon-180.png',
-  'https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js'
+  'https://cdn.jsdelivr.net/npm/hls.js@1'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(
