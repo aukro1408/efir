@@ -7,7 +7,7 @@
 <title>Эфир</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
 <style>
 :root{
   --bg:#0c1116; --surface:#151c25; --surface2:#1b2430; --tile:#0a0e13;
@@ -444,7 +444,7 @@ function openPlayer(ch,fromStart){
   $("#player").classList.add("on");document.body.style.overflow="hidden";
   renderPInfo(ch,nn,catchupUsed,"",wasHttp);
   wirePButtons(ch);
-  const cands=wasHttp?["https://"+raw.slice(7)]:[raw];
+  const cands=wasHttp?[raw,"https://"+raw.slice(7)]:[raw];
   tryCandidate(ch,cands,0,wasHttp);
 }
 function tryCandidate(ch,cands,i,wasHttp){
@@ -460,6 +460,7 @@ function tryCandidate(ch,cands,i,wasHttp){
   const isDirect=/\.(mp4|webm|mkv|mov|m4v)(\?|#|$)/i.test(url);
   if(!isDirect&&window.Hls&&Hls.isSupported()){
     hls=new Hls({maxBufferLength:30});
+    hls.on(Hls.Events.MANIFEST_PARSED,()=>{v.play().catch(()=>{})});
     hls.on(Hls.Events.ERROR,(ev,d)=>{
       if(!d.fatal)return;
       // если hls.js не смог разобрать поток как HLS — пробуем как обычное видео, прежде чем сдаться
@@ -473,9 +474,8 @@ function tryCandidate(ch,cands,i,wasHttp){
     hls.loadSource(url);hls.attachMedia(v);
   }else{
     v.onerror=()=>tryCandidate(ch,cands,i+1,wasHttp);
-    v.src=url;
+    v.src=url;v.play().catch(()=>{});
   }
-  v.play().catch(()=>{});
 }
 function renderPInfo(ch,nn,catchupUsed,mode,wasHttp){
   const info=$("#pinfo");
