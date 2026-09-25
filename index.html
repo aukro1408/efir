@@ -575,13 +575,21 @@ async function fetchRaw(url){
     if(!base) throw new Error('домашний прокси недоступен');
     const tok=(store.homeToken||'').trim();
     if(!tok) throw new Error('вставь токен домашнего прокси в настройках');
-    const r=await fetch(base+'/fetch?url='+encodeURIComponent(url)+'&t='+encodeURIComponent(tok),{cache:'no-store'});
-    if(!r.ok){
-      let em='HTTP '+r.status;
-      try{ const d=await r.json(); if(d&&d.error) em='прокси: '+d.error; }catch(e){}
-      throw new Error(em);
+    const target=base+'/fetch?url='+encodeURIComponent(url)+'&t='+encodeURIComponent(tok);
+    let last=null;
+    for(let i=0;i<3;i++){
+      try{
+        // bypass-tunnel-reminder: обход interstitial-страницы localtunnel (иначе HTTP 511)
+        const r=await fetch(target,{cache:'no-store',headers:{'bypass-tunnel-reminder':'1'}});
+        if(!r.ok){
+          let em='HTTP '+r.status;
+          try{ const d=await r.json(); if(d&&d.error) em='прокси: '+d.error; }catch(e){}
+          throw new Error(em);
+        }
+        return {buf:await r.arrayBuffer(), via:'домашний прокси'};
+      }catch(e){ last=e; await new Promise(r=>setTimeout(r,1500)); }
     }
-    return {buf:await r.arrayBuffer(), via:'домашний прокси'};
+    throw last||new Error('Failed to fetch');
   }
   const routes =
     store.proxy==='off' ? [[u=>u,'напрямую']] :
