@@ -201,19 +201,31 @@ function gunzipMaybe(buf){
   }
   return Promise.resolve(buf);
 }
-async function loadText(url){
+async function loadText(url,marker){
+  const ok=t=>t&&t.length>40&&(!marker||t.indexOf(marker)>=0);
   const seq=[url];
   if(url.startsWith("http://")) seq.push("https://"+url.slice(7));
-  for(const u of seq){try{const b=await bufOf(u);return new TextDecoder().decode(await gunzipMaybe(b))}catch(e){}}
+  for(const u of seq){try{const b=await bufOf(u);const t=new TextDecoder().decode(await gunzipMaybe(b));if(ok(t))return t}catch(e){}}
   const fb=["https://api.cors.lol/?url=","https://api.allorigins.win/raw?url="];
   for(const p of fb){try{const b=await bufOf(p+encodeURIComponent(url));
     const t=new TextDecoder().decode(await gunzipMaybe(b));
-    if(t&&t.length>80) return t}catch(e){}}
+    if(ok(t)) return t}catch(e){}}
   throw new Error("load failed");
 }
 
 /* ================= M3U ================= */
+function splitExtinf(line){
+  // ищет запятую-разделитель, пропуская запятые внутри "кавычек"
+  let q=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"')q=!q;
+    else if(c===','&&!q)return i;
+  }
+  return line.indexOf(",");
+}
 function parseM3U(text){
+  text=text.replace(/^\uFEFF/,"");
   const out=[];let meta=null,tvgUrl=null;
   for(const raw of text.split(/\r?\n/)){
     const line=raw.trim();if(!line)continue;
@@ -223,7 +235,7 @@ function parseM3U(text){
     if(line.startsWith("#EXTINF")){
       const a={};const re=/([\w-]+)="([^"]*)"/g;let m;
       while((m=re.exec(line)))a[m[1].toLowerCase()]=m[2];
-      const ci=line.indexOf(",");
+      const ci=splitExtinf(line);
       const nm=(ci>=0?line.slice(ci+1):"").trim()||"Без названия";
       meta={name:nm,id:a["tvg-id"]||"",logo:a["tvg-logo"]||"",
         group:(a["group-title"]||"").trim()||"Разное",
@@ -304,7 +316,7 @@ async function loadAll(){
   const pl=S.playlists[S.active];
   $("#grid").innerHTML='<div class="spin"></div>';$("#chEmpty").style.display="none";
   try{
-    const m3u=await loadText(pl.url);
+    const m3u=await loadText(pl.url,"#EXT");
     const pr=parseM3U(m3u);
     channels=pr.channels;
     const gs={};pr.channels.forEach(c=>gs[c.group]=1);
@@ -323,7 +335,7 @@ async function loadEPG(tvgUrl){
   const url=(S.epgOverride||"").trim()||tvgUrl;
   if(!url)return;
   try{
-    const xml=await loadText(url);
+    const xml=await loadText(url,"<tv");
     const r=parseXMLTV(xml);
     epgById=r.byId;epgByNorm=r.byNorm;epgCount=r.n;
   }catch(e){}
@@ -444,12 +456,25 @@ function tryCandidate(ch,cands,i,wasHttp){
   const st=$("#pstat");if(st)st.textContent="Соединяю…";
   stopStream();
   const v=$("#video");
-  v.onerror=()=>tryCandidate(ch,cands,i+1,wasHttp);
-  if(window.Hls&&Hls.isSupported()&&url.indexOf(".m3u8")>=0){
+  // прямые не-HLS форматы играем нативно, всё остальное (в т.ч. без расширения .m3u8 в ссылке — так отдают многие провайдеры) — через hls.js
+  const isDirect=/\.(mp4|webm|mkv|mov|m4v)(\?|#|$)/i.test(url);
+  if(!isDirect&&window.Hls&&Hls.isSupported()){
     hls=new Hls({maxBufferLength:30});
-    hls.on(Hls.Events.ERROR,(ev,d)=>{if(d.fatal)tryCandidate(ch,cands,i+1,wasHttp)});
+    hls.on(Hls.Events.ERROR,(ev,d)=>{
+      if(!d.fatal)return;
+      // если hls.js не смог разобрать поток как HLS — пробуем как обычное видео, прежде чем сдаться
+      if(d.details==="manifestParsingError"||d.details==="manifestLoadError"){
+        try{hls.destroy()}catch(e){}
+        hls=null;v.onerror=()=>tryCandidate(ch,cands,i+1,wasHttp);v.src=url;v.play().catch(()=>{});
+        return;
+      }
+      tryCandidate(ch,cands,i+1,wasHttp);
+    });
     hls.loadSource(url);hls.attachMedia(v);
-  }else{v.src=url}
+  }else{
+    v.onerror=()=>tryCandidate(ch,cands,i+1,wasHttp);
+    v.src=url;
+  }
   v.play().catch(()=>{});
 }
 function renderPInfo(ch,nn,catchupUsed,mode,wasHttp){
