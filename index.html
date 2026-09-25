@@ -657,10 +657,14 @@ function showHomeLoader(on){
 function emptyHtml(big,t,p){ return `<div class="empty"><div class="big">${big}</div><h3>${t}</h3><p>${p}</p></div>`; }
 
 /* ---------- рендер ---------- */
+function logoErr(el){
+  if(el.dataset.step==='0'){ el.dataset.step='1'; el.src=el.dataset.picon; }
+  else{ const d=el.parentElement; if(d) d.textContent=(el.dataset.name||'?').trim().charAt(0).toUpperCase(); }
+}
 function logoHtml(ch,cls){
-  const init=(ch.name||'?').trim().charAt(0).toUpperCase();
-  const img=ch.logo?`<img src="${esc(ch.logo)}" alt="" loading="lazy" onerror="this.remove()">`:'';
-  return `<div class="${cls||'lg'}">${img||init}</div>`;
+  const name=ch.name||'?';
+  const picon='https://epg.rootu.top/picon/'+encodeURIComponent(name)+'.png';
+  return `<div class="${cls||'lg'}"><img src="${esc(ch.logo||picon)}" alt="" loading="lazy" data-step="${ch.logo?'0':'1'}" data-name="${esc(name)}" data-picon="${esc(picon)}" onerror="logoErr(this)"></div>`;
 }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const isFav=ch=>store.favs.includes(ch.key);
