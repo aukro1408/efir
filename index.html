@@ -416,20 +416,43 @@ function renderFavs(){
 /* ================= player ================= */
 function stopStream(){
   try{if(hls){hls.destroy();hls=null}}catch(e){}
-  const v=$("#video");try{v.pause()}catch(e){}
+  const v=$("#video");v.onerror=null;try{v.pause()}catch(e){}
   v.removeAttribute("src");v.load();
 }
 function openPlayer(ch,fromStart){
   curCh=ch;
   const nn=nowNext(epgFor(ch));
-  const isHttp=ch.url.indexOf("https://")!==0;
-  let url=ch.url,catchupUsed=false;
+  let raw=ch.url,catchupUsed=false;
   if(fromStart&&ch.catchup&&nn&&nn.cur){
     const u=Math.floor(nn.cur.s/1000),l=Math.floor(Date.now()/1000);
-    url=ch.url+(ch.url.indexOf("?")>=0?"&":"?")+"utc="+u+"&lutc="+l;
+    raw=ch.url+(ch.url.indexOf("?")>=0?"&":"?")+"utc="+u+"&lutc="+l;
     catchupUsed=true;
   }
+  const wasHttp=raw.indexOf("http://")===0;
   $("#player").classList.add("on");document.body.style.overflow="hidden";
+  renderPInfo(ch,nn,catchupUsed,"",wasHttp);
+  wirePButtons(ch);
+  const cands=wasHttp?["https://"+raw.slice(7)]:[raw];
+  tryCandidate(ch,cands,0,wasHttp);
+}
+function tryCandidate(ch,cands,i,wasHttp){
+  if(i>=cands.length){
+    renderPInfo(ch,nowNext(epgFor(ch)),false,"fail",wasHttp);
+    wirePButtons(ch);return;
+  }
+  const url=cands[i];
+  const st=$("#pstat");if(st)st.textContent="Соединяю…";
+  stopStream();
+  const v=$("#video");
+  v.onerror=()=>tryCandidate(ch,cands,i+1,wasHttp);
+  if(window.Hls&&Hls.isSupported()&&url.indexOf(".m3u8")>=0){
+    hls=new Hls({maxBufferLength:30});
+    hls.on(Hls.Events.ERROR,(ev,d)=>{if(d.fatal)tryCandidate(ch,cands,i+1,wasHttp)});
+    hls.loadSource(url);hls.attachMedia(v);
+  }else{v.src=url}
+  v.play().catch(()=>{});
+}
+function renderPInfo(ch,nn,catchupUsed,mode,wasHttp){
   const info=$("#pinfo");
   const pct=nn&&nn.cur?Math.min(100,Math.max(0,(Date.now()-nn.cur.s)/((nn.cur.e||nn.cur.s+3600e3)-nn.cur.s)*100)):0;
   const canStart=!!(ch.catchup&&nn&&nn.cur&&(Date.now()-nn.cur.s>90000));
@@ -439,8 +462,8 @@ function openPlayer(ch,fromStart){
   if(nn&&nn.cur)h+=`<div class="pnow"><b>${fmtT(nn.cur.s)}–${fmtT(nn.cur.e||nn.cur.s+3600e3)}</b> · ${esc(nn.cur.title)}</div>`;
   if(nn&&nn.nxt)h+=`<div class="pnext">Далее: ${fmtT(nn.nxt.s)} · ${esc(nn.nxt.title)}</div>`;
   if(nn&&nn.cur)h+=`<div class="pbar"><i style="width:${pct}%"></i></div>`;
-  h+=`<div class="pbtns">${canStart?`<button class="pbtn pri" id="bStart">▶ Сначала</button>`:""}<button class="pbtn" id="bCopy">Ссылка</button><button class="pbtn" id="bShare">Поделиться</button></div>`;
-  if(isHttp)h+=`<div class="pext"><b>Поток без шифрования.</b><br>Браузер не даёт смотреть http на https-странице — это ограничение, а не поломка. Открой ссылку во внешнем плеере: VLC или MX Player подхватят её сами.</div>`;
+  h+=`<div class="pbtns">${canStart?`<button class="pbtn pri" id="bStart">▶ Сначала</button>`:""}<button class="pbtn" id="bCopy">Ссылка</button><button class="pbtn" id="bShare">Поделиться</button></div><div id="pstat" style="font-size:12.5px;color:var(--faint);min-height:18px;margin-bottom:4px"></div>`;
+  if(mode==="fail")h+=`<div class="pext"><b>Не получилось показать в приложении.</b><br>${wasHttp?"Провайдер отдаёт поток только по http, а защищённая версия не отвечает — браузер такое блокирует, это не поломка.":"Поток не отвечает."}<br>Открой ссылку во внешнем плеере: VLC или MX Player подхватят её сами.</div>`;
   if(plist.length){
     h+=`<div class="plist"><h4>Программа</h4>`;
     for(let i=0;i<plist.length;i++){const p=plist[i];
@@ -450,19 +473,11 @@ function openPlayer(ch,fromStart){
     h+=`</div>`;
   }
   info.innerHTML=h;
+}
+function wirePButtons(ch){
   $("#bCopy").onclick=()=>{if(navigator.clipboard)navigator.clipboard.writeText(ch.url).then(()=>toast("Ссылка скопирована")).catch(()=>toast("Не вышло скопировать"));else toast("Копирование недоступно")};
   $("#bShare").onclick=()=>{if(navigator.share)navigator.share({title:ch.name,url:ch.url}).catch(()=>{});else $("#bCopy").click()};
   const bs=$("#bStart");if(bs)bs.onclick=()=>openPlayer(ch,true);
-  if(isHttp)return;
-  stopStream();
-  const v=$("#video");
-  const looksHls=url.indexOf(".m3u8")>=0;
-  if(window.Hls&&Hls.isSupported()&&(looksHls||!v.canPlayType("application/vnd.apple.mpegurl"))){
-    hls=new Hls({maxBufferLength:30});
-    hls.loadSource(url);hls.attachMedia(v);
-    hls.on(Hls.Events.ERROR,(ev,d)=>{if(d.fatal){stopStream();v.src=url;v.play().catch(()=>{})}});
-  }else{v.src=url}
-  v.play().catch(()=>{});
 }
 $("#pclose").onclick=()=>{$("#player").classList.remove("on");document.body.style.overflow="";stopStream();curCh=null};
 
